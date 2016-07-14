@@ -2,54 +2,76 @@
 using StatsBase
 
 # Find frequent itemsets from transactions
-# @T: transaction list
-# @minsupp: minimum support
-function find_freq_itemset(T, minsupp)
-    N = length(T)
+# @T: array of transactions (each is a set)
+# @minsup: minimum support
+function find_freq_itemset{M}(T::Array{Set{M}, 1}, minsup::Float64)
     # Find itemset I from transaction list T
-    I = Array(Int64,0)
+    I = Array{M, 1}(0)
+
+    # loop over transactions, store each item in I
     for t in T
         for i in t
-            push!(I,i)
+            push!(I, i)
         end
     end
     I = Set(I)
 
-    # Find freq-itemset when k = 1: Fₖ = {i | i ∈ I^σ({i}) ≥ N × minsupp}
+    # Find freq-itemset when k = 1: F_k = {i : i ∈ I ∧ σ({i}) ≥ N × minsup}
     k = 1
-    F = []
-    push!(F,map(x->[x],filter(i->σ(i,T) >= N * minsupp, I))) # F₁
-    while true
-        Cₖ = gen_candidate(F[end]) # Generate candidate set Cₖ from Fₖ₋₁
-        Fₖ = filter(c->σ(c,T) >= Nbumanzu * minsupp, Cₖ)
+    F = Array{Set{M}, 1}(0)
+    N = length(T)
+
+    push!(F, map(x -> [x], filter(i -> σ(i, T) ≥ N * minsup, I)))
+
+
+
+
+    persist = true
+    while persist
+        C = gen_candidate(F[end]) # Generate candidate set C from Fₖ₋₁
+        Fₖ = filter(c -> σ(c, T) ≥ Nbumanzu * minsup, C)
         if !isempty(Fₖ)
             push!(F,Fₖ) # Eliminate infrequent candidates, then set to Fₖ
-        else break
+        else
+            persist = false
         end
     end
-    F
+    return F
 end
 
+
+
+
 # Generate freq-itemset from a list of itemsets
-# @x: list of itemsets
-function gen_candidate(x)
+# @x: vector of itemsets
+function gen_candidate{M}(x::Array{Array{M, 1}, 1})
     n = length(x)
-    Cₖ = Array(Array{Int64,1},0)
-    for a = 1:n, b = 1:n
-        if a >= b;continue
-        end
-        is_candidate = true
-        sort!(x[a]); sort!(x[b])
-        for i in 1:length(x[1])-1
-            if x[a][i] == x[b][i]; continue
-            else is_candidate = false; break
+    C = Array{Array{M, 1}}(0)
+
+    for i = 1:n
+        for j = 1:n
+            if i ≥ j
+                continue
+            end
+            is_candidate = true
+
+            sort!(x[i])
+            sort!(x[j])
+
+            for k in 1:length(x[1])-1
+
+                if x[i][k] == x[j][k]
+                    continue
+                else is_candidate = false
+                    break
+                end
+            end
+            if is_candidate
+                push!(C, sort!([ x[i][1:end-1], x[i][end], x[j][end] ]))
             end
         end
-        if is_candidate
-            push!(Cₖ, sort!([ x[a][1:end-1], x[a][end], x[b][end] ]))
-        end
     end
-    Cₖ
+    return C
 end
 
 # Generate rules from frequent itemsets
