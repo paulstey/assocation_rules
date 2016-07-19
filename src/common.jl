@@ -5,17 +5,19 @@ type Rule
     Q::Array{Int64} # Consequent
 end
 
-# Support Count: σ(x) = | {tᵢ|x ⊆ tᵢ,tᵢ∈ T}|
+# Support Count: σ(x) = | {tᵢ|x ⊆ t_i, t_i ∈ T}|
 function σ(x, T)
-    ret = 0
+    res = 0
     for t in T
-        ⊆(x,t) && (ret += 1)
+        if x ⊆ t
+            res += 1
+        end
     end
-    ret
+    return res
 end
 
-# Support of itemset x -> y, which x does not intersect y.
-supp(x,y,T) = σ(∪(x,y),T)/length(T)
+# Support of rule x -> y, which x does not intersect y.
+support(x, y, T) = σ(union(x, y), T)/length(T)
 
-# Confidence of itemset x-> y, which x does not intersect y.
-conf(x,y,T) = σ(∪(x,y),T)/σ(x,T)
+# Confidence of rule x -> y, which x does not intersect y.
+confidence(x, y, T) = σ(union(x, y), T)/σ(x, T)
