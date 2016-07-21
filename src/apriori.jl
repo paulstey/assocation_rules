@@ -26,8 +26,6 @@ v = [rand([1, 2, 3, 4, 5], 10) for x = 1:10_000];
 
 
 
-
-
 # Given C_{k-1}, which is a vector of transactions (and each
 # transaction is a vector), this function returns the candidate
 # frequent item sets C_k
@@ -46,13 +44,15 @@ function apriori_gen{M}(x::Array{Array{M, 1}, 1})
             # length k - 1 itemsets if their first k - 2 elements identical
             for l in 1:m
 
-                # confirm all k - 1 elements are identical
+                # see if all k - 1 elements are identical
                 if x[i][l] != x[j][l]
                     keep_candidate = false
                     break
                 end
             end
             if keep_candidate
+                # Julia isn't inferring the type of c below, but
+                # telling the compiler doesn't improve speed
                 c = [x[i]; x[j][end]]
                 push!(C, sort!(c))
             end
@@ -61,17 +61,9 @@ function apriori_gen{M}(x::Array{Array{M, 1}, 1})
     return C              # vector of candidate itemsets: C_{k}
 end
 
-
-
-
-
-
-
-
-
-
-
-
+v = [rand([1, 2, 3, 4, 5], 10) for x = 1:1000];
+# @code_warntype apriori_gen(v)
+@time apriori_gen(v)
 
 
 # Find frequent itemsets from transactions
@@ -102,11 +94,14 @@ function freq_itemset_gen{M}(T::Array{Array{M, 1}, 1}, minsup::Float64)
 end
 
 v = [[1, 2, 3], [1, 2, 4], [1, 3, 5], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4], [1, 4, 5], [3, 4, 5]]
+v = [rand([1, 2, 3, 4, 5], 10) for x = 1:1000];
+
+# @code_warntype freq_itemset_gen(v, 0.5)
 @time freq_itemset_gen(v, 0.5)
 
 
 
-v = [[1, 2, 3], [1, 2, 4], [1, 3, 5], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4], [1, 4, 5], [3, 4, 5]]
+v = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4], [1, 4, 5], [3, 4, 5]]
 @time apriori_gen(v)
 
 
@@ -114,43 +109,50 @@ v = [[1, 2, 3], [1, 2, 4], [1, 3, 5], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4]
 
 
 
+#
+# R: Array of rules
+# f: frequent itemset
+# H: Array of rule consequents (also arrays)
+# T: Array of transactions
 
+function ap_genrules!{M}(R, f, H, T)
+    k = length(f)
+    m = length(H[1])
+    if k > m + 1
+        H = apriori_gen(H)
+        H_mplus1 = Array{M, 1}(0)
 
-
-
+        for h in H
+            p = setdiff(f, h)
+            if conf(p, h, T) ≥ minconf
+                push!(R, Rule(p, h))
+                push!(H_mplus1, h)
+            end
+        end
+        ap_genrules!(R, f, H_mplus1, T)
+    end
+end
 
 
 
 # Generate rules from frequent itemsets
 # @x: list of frequent itemsets
 # @T: Transaction list
-function gen_rules(x, T)
-    if length(x) <= 1;
-        return [] # F contains 1-itemsets only, hence no rules generated.
+function generate_rules{M}(x::Array{M, 1}, T)
+    if length(x) ≤ 1;
+        return Array{M}(0)          # F contains 1-itemsets only; no rules generated.
     end
     x = reduce(append!, x[2:end])
-    R = Array(Rule, 0)
-    for f in x # f as each freq-f-itemset fₖ
-        ap_genrules!(R,f,map(i->Array([i]),f),T) # H₁ itemset is same as f
+    R = Array{Rule}(0)
+    for f in x                      # f as each freq-f-itemset fₖ
+        ap_genrules!(R, f, map(i -> Array([i]), f), T) # H₁ itemset is same as f
     end
-    R
+    return R
 end
 
+v = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4], [1, 4, 5], [3, 4, 5]]
+freq_itemsets = freq_itemset_gen(v, 0.2)
+generate_rules(freq_itemsets, v)
 
-function ap_genrules!(R, f, H, T)
-    k, m = length(f), length(H[1])
-    if k > m + 1
-        H = apriori_gen(H)
-        H_plus_1 = []
-        for h in H
-            p = setdiff(f,h)
-            if conf(p, h, T) >= minconf
-                push!(R, Rule(p,h))
-                push!(H_plus_1, h)
-            end
-        end
-        ap_genrules(R, f, H_plus_1, T)
-    end
-end
 
-# TODO: Closed Frequent Itemset
+#

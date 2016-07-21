@@ -17,7 +17,13 @@ function σ(x, T)
 end
 
 # Support of rule x -> y, which x does not intersect y.
-support(x, y, T) = σ(union(x, y), T)/length(T)
+supp(x, y, T) = σ(union(x, y), T)/length(T)
 
 # Confidence of rule x -> y, which x does not intersect y.
-confidence(x, y, T) = σ(union(x, y), T)/σ(x, T)
+conf(x, y, T) = σ(union(x, y), T)/σ(x, T)
+
+
+
+
+# experimenting
+T = [[1, 2, 3], [1, 2, 3], [1, 3, 3], [1, 1, 3]]
