@@ -69,6 +69,7 @@ v = [rand([1, 2, 3, 4, 5], 10) for x = 1:1000];
 # Find frequent itemsets from transactions
 # @T: array of transactions (each is a set)
 # @minsup: minimum support
+
 function freq_itemset_gen{M}(T::Array{Array{M, 1}, 1}, minsup::Float64)
 
     I = get_unique_items(T)
@@ -109,7 +110,7 @@ v = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4]
 
 
 
-#
+
 # R: Array of rules
 # f: frequent itemset
 # H: Array of rule consequents (also arrays)
@@ -132,7 +133,12 @@ function ap_genrules!{M}(R, f, H, T)
         ap_genrules!(R, f, H_mplus1, T)
     end
 end
+rules = Vector{Rule}(0)
+freq = freq_itemset_gen(v, 0.2)
+consq = Vector{Vector{Int}}(1)
+trans = [[1, 2, 3], [1, 2, 4], [1, 3, 5], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4], [1, 4, 5], [3, 4, 5]]
 
+ap_genrules!(rules, freq, consq, trans)
 
 
 # Generate rules from frequent itemsets
