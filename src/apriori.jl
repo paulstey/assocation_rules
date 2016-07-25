@@ -1,7 +1,7 @@
 # Find k-freq-itemset in given transactions of items queried together
 using StatsBase
 
-
+include("./src/common.jl")
 # Given a vector of transactions (each is a vector), this
 # function returns a single array with all the unique items.
 
@@ -113,7 +113,7 @@ v = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4]
 
 # R: Array of rules
 # f: frequent itemset
-# H: Array of rule consequents (also arrays)
+# H: Array of rule consequents (also rays)
 # T: Array of transactions
 
 function ap_genrules!{M}(R, f, H, T)
