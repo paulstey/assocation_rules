@@ -21,8 +21,8 @@ end
 # v = [[1, 2, 3], [1, 2, 4], [1, 3, 5], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4], [1, 4, 5], [3, 4, 5]]
 v = [rand([1, 2, 3, 4, 5], 10) for x = 1:10_000];
 
-@time get_unique_items(v)
-
+@time get_unique_items(v);
+@time unique(reduce(append!, v));
 
 
 
@@ -69,7 +69,7 @@ v = [rand([1, 2, 3, 4, 5], 10) for x = 1:1000];
 # Find frequent itemsets from transactions
 # @T: array of transactions (each is a set)
 # @minsup: minimum support
-
+# NOTE: This function agrees with R
 function freq_itemset_gen{M}(T::Array{Array{M, 1}, 1}, minsup::Float64)
 
     I = get_unique_items(T)
@@ -149,6 +149,7 @@ function ap_genrules!{M}(fk::Vector{M}, Hm::Vector{Vector{M}}, T::Vector{Vector{
     if k > m+1
         H_mplus1 = apriori_gen(Hm)
         indcs_to_drop = Array{Int}(0)
+
         for (idx, h_mp1) in enumerate(H_mplus1)
             # p = setdiff(fk, h_mp1)
             xconf = σ(fk, T)/σ(setdiff(fk, h_mp1), T)
@@ -158,6 +159,7 @@ function ap_genrules!{M}(fk::Vector{M}, Hm::Vector{Vector{M}}, T::Vector{Vector{
                 push!(indcs_to_drop, idx)
             end
         end
+
         # remove the indices of consequents with low confidence
         reverse!(indcs_to_drop)
         for indx in indcs_to_drop
@@ -168,10 +170,9 @@ function ap_genrules!{M}(fk::Vector{M}, Hm::Vector{Vector{M}}, T::Vector{Vector{
 end
 
 rules = Vector{Rule}(0)
-freq = [1, 2, 3]
+freq = [1, 2]
 consq = [[1], [2], [3], [4], [5]]
-trans = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 4, 5], [1, 3, 4, 5]]
-
+trans = [[1, 2], [1, 3], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 4, 5]]
 ap_genrules!(freq, consq, trans, 0.01, rules)
 rules
 
@@ -180,15 +181,20 @@ rules
 # Generate rules from frequent itemsets
 # @x: list of frequent itemsets
 # @T: Transaction list
-function generate_rules{M}(x::Array{M, 1}, T, minconf)
-    if length(x) ≤ 1;
-        return Array{M}(0)          # F contains 1-itemsets only; no rules generated.
-    end
-    # x = reduce(append!, x[2:end])
+function generate_rules{M}(F::Vector{Vector{Vector{M}}}, T, minconf)
+    k_max = length(F)
+    # if k_max ≤ 1;
+    #     return Array{M}(0)          # F contains 1-itemsets only; no rules generated.
+    # end
     R = Array{Rule}(0)
-    x = reduce(append!, x)
-    for f in x
-        ap_genrules!(f, map(i -> Array([i]), f), T, minconf, R)
+
+    for k = 2:k_max
+        H1 = map(x -> [x], get_unique_items(F[k]))
+        display(H1)
+        for f in F[k]
+            display(f)
+            ap_genrules!(f, H1, T, minconf, R)
+        end
     end
     return R
 end
