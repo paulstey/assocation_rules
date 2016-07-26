@@ -1,5 +1,5 @@
 # Find k-freq-itemset in given transactions of items queried together
-using StatsBase
+# using StatsBase
 
 include("./src/common.jl")
 # Given a vector of transactions (each is a vector), this
@@ -113,52 +113,140 @@ v = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4]
 
 # R: Array of rules
 # f: frequent itemset
-# H: Array of rule consequents (also rays)
+# H: Array of rule consequents (also arrays)
 # T: Array of transactions
+#
+# function ap_genrules!{M}(R, f, H, T)
+#     k = length(f)
+#     m = length(H[1])
+#     if k > m + 1
+#         H = apriori_gen(H)
+#         H_mplus1 = Array{M, 1}(0)
+#
+#         for h in H
+#             p = setdiff(f, h)
+#             if conf(p, h, T) ≥ minconf
+#                 push!(R, Rule(p, h))
+#                 push!(H_mplus1, h)
+#             end
+#         end
+#         ap_genrules!(R, f, H_mplus1, T)
+#     end
+# end
+# rules = Vector{Rule}(0)
+# freq = freq_itemset_gen(v, 0.2)
+# consq = [[]]
+# trans = [[1, 2, 3], [1, 2, 4], [1, 3, 5]]
+#
+# ap_genrules!(rules, freq, consq, trans)
 
-function ap_genrules!{M}(R, f, H, T)
-    k = length(f)
-    m = length(H[1])
-    if k > m + 1
-        H = apriori_gen(H)
-        H_mplus1 = Array{M, 1}(0)
 
-        for h in H
-            p = setdiff(f, h)
-            if conf(p, h, T) ≥ minconf
-                push!(R, Rule(p, h))
-                push!(H_mplus1, h)
+
+function ap_genrules!(fk, Hm, T, minconf, R)
+    k = length(fk)
+    m = length(Hm[1])
+    if k > m+1
+        H_mplus1 = apriori_gen(Hm)
+        indcs_to_drop = Array{Int}(0)
+        for (idx, h_mp1) in enumerate(H_mplus1)
+            p = setdiff(fk, h_mp1)
+            if conf(p, h_mp1, T) ≥ minconf
+                push!(R, Rule(p, h_mp1))
+            else
+                push!(indcs_to_drop, idx)
             end
         end
-        ap_genrules!(R, f, H_mplus1, T)
+        # remove the indices of consequents with low confidence
+        reverse!(indcs_to_drop)
+        for indx in indcs_to_drop
+            deleteat!(H_mplus1, indx)
+        end
+        ap_genrules!(fk, H_mplus1, T, minconf, R)
     end
 end
-rules = Vector{Rule}(0)
-freq = freq_itemset_gen(v, 0.2)
-consq = Vector{Vector{Int}}(1)
-trans = [[1, 2, 3], [1, 2, 4], [1, 3, 5], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4], [1, 4, 5], [3, 4, 5]]
 
-ap_genrules!(rules, freq, consq, trans)
+rules = Vector{Rule}(0)
+freq = [1, 2, 3]
+consq = [[1], [2], [3], [4], [5]]
+trans = [[1, 2, 3], [1, 2, 4], [1, 3, 5], [1, 2, 4], [1, 3, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 4, 5], [1, 3, 4, 5]]
+
+ap_genrules!(freq, consq, trans, 0.01, rules)
+rules
+
 
 
 # Generate rules from frequent itemsets
 # @x: list of frequent itemsets
 # @T: Transaction list
-function generate_rules{M}(x::Array{M, 1}, T)
+function generate_rules{M}(x::Array{M, 1}, T, minconf)
     if length(x) ≤ 1;
         return Array{M}(0)          # F contains 1-itemsets only; no rules generated.
     end
     x = reduce(append!, x[2:end])
     R = Array{Rule}(0)
-    for f in x                      # f as each freq-f-itemset fₖ
-        ap_genrules!(R, f, map(i -> Array([i]), f), T) # H₁ itemset is same as f
+    display(R)
+    for f in x
+        ap_genrules!(f, map(i -> Array([i]), f), T, minconf, R)
+        println(f)
+        display(R)
     end
     return R
 end
 
 v = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4], [1, 4, 5], [3, 4, 5]]
 freq_itemsets = freq_itemset_gen(v, 0.2)
-generate_rules(freq_itemsets, v)
+rules = generate_rules(freq_itemsets, v, 0.01)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #
