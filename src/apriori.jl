@@ -94,11 +94,11 @@ function freq_itemset_gen{M}(T::Array{Array{M, 1}, 1}, minsup::Float64)
     return F
 end
 
-v = [[1, 2, 3], [1, 2, 4], [1, 3, 5], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4], [1, 4, 5], [3, 4, 5]]
-v = [rand([1, 2, 3, 4, 5], 10) for x = 1:1000];
-
+v = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4], [1, 4, 5], [3, 4, 5]]
+v = [[1, 2], [1, 3], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5]]
+# v = [rand([1, 2, 3, 4, 5], 10) for x = 1:1000];
 # @code_warntype freq_itemset_gen(v, 0.5)
-@time freq_itemset_gen(v, 0.5)
+freq_itemset_gen(v, 0.2)
 
 
 
@@ -142,16 +142,18 @@ v = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4]
 
 
 
-function ap_genrules!(fk, Hm, T, minconf, R)
+function ap_genrules!{M}(fk::Vector{M}, Hm::Vector{Vector{M}}, T::Vector{Vector{M}}, minconf, R)
     k = length(fk)
-    m = length(Hm[1])
+    m = length(Hm[1])            # Note: will need to confirm length(Hm) ≥ 1
+
     if k > m+1
         H_mplus1 = apriori_gen(Hm)
         indcs_to_drop = Array{Int}(0)
         for (idx, h_mp1) in enumerate(H_mplus1)
-            p = setdiff(fk, h_mp1)
-            if conf(p, h_mp1, T) ≥ minconf
-                push!(R, Rule(p, h_mp1))
+            # p = setdiff(fk, h_mp1)
+            xconf = σ(fk, T)/σ(setdiff(fk, h_mp1), T)
+            if xconf ≥ minconf
+                push!(R, Rule(fk, h_mp1))
             else
                 push!(indcs_to_drop, idx)
             end
@@ -168,7 +170,7 @@ end
 rules = Vector{Rule}(0)
 freq = [1, 2, 3]
 consq = [[1], [2], [3], [4], [5]]
-trans = [[1, 2, 3], [1, 2, 4], [1, 3, 5], [1, 2, 4], [1, 3, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 4, 5], [1, 3, 4, 5]]
+trans = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 4, 5], [1, 3, 4, 5]]
 
 ap_genrules!(freq, consq, trans, 0.01, rules)
 rules
@@ -182,20 +184,19 @@ function generate_rules{M}(x::Array{M, 1}, T, minconf)
     if length(x) ≤ 1;
         return Array{M}(0)          # F contains 1-itemsets only; no rules generated.
     end
-    x = reduce(append!, x[2:end])
+    # x = reduce(append!, x[2:end])
     R = Array{Rule}(0)
-    display(R)
+    x = reduce(append!, x)
     for f in x
         ap_genrules!(f, map(i -> Array([i]), f), T, minconf, R)
-        println(f)
-        display(R)
     end
     return R
 end
 
 v = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4], [1, 4, 5], [3, 4, 5]]
 freq_itemsets = freq_itemset_gen(v, 0.2)
-rules = generate_rules(freq_itemsets, v, 0.01)
+
+rules = generate_rules(freq_itemsets, v, 0.1)
 
 
 
