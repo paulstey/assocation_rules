@@ -21,9 +21,3 @@ supp(x, y, T) = σ(union(x, y), T)/length(T)
 
 # Confidence of rule x -> y, which x does not intersect y.
 conf(x, y, T) = σ(union(x, y), T)/σ(x, T)
-
-
-
-
-# experimenting
-T = [[1, 2, 3], [1, 2, 3], [1, 3, 3], [1, 1, 3]]

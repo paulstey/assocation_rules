@@ -144,10 +144,12 @@ v = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4]
 
 function ap_genrules!{M}(fk::Vector{M}, Hm::Vector{Vector{M}}, T::Vector{Vector{M}}, minconf, R)
     k = length(fk)
-    m = length(Hm[1])            # Note: will need to confirm length(Hm) ≥ 1
+    m = length(Hm[1])            # NOTE: will need to confirm length(Hm) ≥ 1
 
     if k > m+1
         H_mplus1 = apriori_gen(Hm)
+        warn("hit")
+        println(H_mplus1)
         indcs_to_drop = Array{Int}(0)
 
         for (idx, h_mp1) in enumerate(H_mplus1)
@@ -171,7 +173,7 @@ end
 
 rules = Vector{Rule}(0)
 freq = [1, 2]
-consq = [[1], [2], [3], [4], [5]]
+consq = [Int[], [1], [2], [3], [4], [5]]
 trans = [[1, 2], [1, 3], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 4, 5]]
 ap_genrules!(freq, consq, trans, 0.01, rules)
 rules
