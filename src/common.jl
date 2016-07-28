@@ -1,8 +1,8 @@
 # Common types and functions
 
 type Rule
-    P::Array{Int64} # Antecedent
-    Q::Array{Int64} # Consequent
+    p::Array{Int64} # Antecedent
+    q::Array{Int64} # Consequent
 end
 
 # Support Count: σ(x) = | {tᵢ|x ⊆ t_i, t_i ∈ T}|
