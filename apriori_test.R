@@ -40,7 +40,7 @@ trans2 <- as(a_list, "transactions")
 
 
 rules <- apriori(trans2, parameter = list(
-  supp = 0.1, conf = 0.01, target = "rules")
+  supp = 0.2, conf = 0.01, target = "rules")
 )
 inspect(rules)
 
