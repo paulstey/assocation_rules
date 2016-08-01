@@ -1,8 +1,10 @@
 # Find k-freq-itemset in given transactions of items queried together
-# using StatsBase
 
 include("./src/common.jl")
 include("./src/display_utils.jl")
+
+
+
 # Given a vector of transactions (each is a vector), this
 # function returns a single array with all the unique items.
 
@@ -69,8 +71,6 @@ end
 v = [rand([1, 2, 3, 4, 5], 10) for x = 1:1000];
 # @code_warntype apriori_gen(v)
 @time apriori_gen(v)
-
-
 
 
 
