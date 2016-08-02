@@ -37,10 +37,6 @@ function apriori_gen{M}(x::Array{Array{M, 1}, 1})
     m = length(x[1]) - 1
     C = Array{Array{M, 1}, 1}(0)
 
-    if (m + 1) == 2
-        return collect(combinations(freq_sets, 2))
-    end
-
     for i = 1:n
         for j = (i+1):n
             sort!(x[i])
@@ -52,7 +48,7 @@ function apriori_gen{M}(x::Array{Array{M, 1}, 1})
             for l in 1:m
 
                 # see if all k - 1 elements are identical
-                if x[i][l] != x[j][l]
+                if x[i][l] != x[j][l] || x[i][m+1] == x[j][m+1]
                     keep_candidate = false
                     break
                 end
@@ -74,33 +70,33 @@ v = [rand([1, 2, 3, 4, 5], 10) for x = 1:1000];
 
 
 
-# matlab translation
-function apriori_gen3{M}(freq_sets::Vector{Vector{M}}, k::Int)
-
-    if k == 2
-        Ck = collect(combinations(freq_sets, 2))
-    elseif k > 2
-        Ck = Array{Array{M, 1}, 1}(0)
-        n = size(freq_sets, 1)
-        for i = 1:n
-            for j = (i+1):n
-                pair1 = sort(freq_sets[i][1:k-2])
-                pair2 = sort(freq_sets[j][1:k-2])
-
-                # println(pair1, " ", pair2)
-                if pair1 == pair2
-                    # c = union(freq_sets[i], freq_sets[j])
-                    c = union(freq_sets[i], freq_sets[j])
-                    push!(Ck, sort(c))
-                end
-            end
-        end
-    end
-    return Ck
-end
-
-@time res1 = apriori_gen3([[1, 2], [1, 3], [1, 2], [2, 3]], 3)
-@time res2 = apriori_gen([[1, 2], [1, 3], [1, 2], [2, 3]])
+# # matlab translation
+# function apriori_gen3{M}(freq_sets::Vector{Vector{M}}, k::Int)
+#
+#     if k == 2
+#         Ck = collect(combinations(freq_sets, 2))
+#     elseif k > 2
+#         Ck = Array{Array{M, 1}, 1}(0)
+#         n = size(freq_sets, 1)
+#         for i = 1:n
+#             for j = (i+1):n
+#                 pair1 = sort(freq_sets[i][1:k-2])
+#                 pair2 = sort(freq_sets[j][1:k-2])
+#
+#                 # println(pair1, " ", pair2)
+#                 if pair1 == pair2
+#                     # c = union(freq_sets[i], freq_sets[j])
+#                     c = union(freq_sets[i], freq_sets[j])
+#                     push!(Ck, sort(c))
+#                 end
+#             end
+#         end
+#     end
+#     return Ck
+# end
+#
+# @time res1 = apriori_gen3([[1, 2], [1, 3], [1, 2], [2, 3]], 3)
+# @time res2 = apriori_gen([[1, 2], [1, 3], [1, 2], [2, 3]])
 
 
 
@@ -138,15 +134,15 @@ function freq_itemset_gen{M}(T::Array{Array{M, 1}, 1}, minsup::Float64)
 end
 
 v = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4], [1, 4, 5], [3, 4, 5]]
-v = [[1, 2], [1, 3], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5]]
+v = [[1, 2], [1, 3], [2, 4], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5], [2, 3, 4, 6]]
 # v = [rand([1, 2, 3, 4, 5], 10) for x = 1:1000];
 # @code_warntype freq_itemset_gen(v, 0.5)
+
+
+
+v = [[1, 2, 3], [1, 2, 3], [1, 2, 3],  [1, 2, 5], [1, 3, 4], [1, 4, 5], [2, 3, 4], [2, 3, 4], [2, 3, 5], [3, 4, 5]]
 freq_itemset_gen(v, 0.2)
 
-
-
-v = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4], [1, 4, 5], [3, 4, 5]]
-@time apriori_gen(v)
 
 
 
@@ -191,10 +187,17 @@ end
 rules = Vector{Rule}(0)
 freq = [1, 2]
 consq = [Int[], [1], [2], [3], [4], [5]]
-trans = [[1, 2], [1, 3], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5]]
+trans = [[1, 2], [1, 3], [2, 4], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5], [2, 3, 4, 6]]
 ap_genrules!(freq, consq, trans, 0.01, rules)
 rules
 
+
+rules = Vector{Rule}(0)
+freq = [1, 2, 3, 4]
+consq = [[1], [2], [3], [4]]
+trans = [[1], [2], [1, 2], [1, 3], [2, 4], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5], [2, 3, 4, 6]]
+ap_genrules!(freq, consq, trans, 0.01, rules)
+rules
 
 
 
@@ -290,7 +293,7 @@ function generate_rules{M}(freq::Vector{Vector{Vector{M}}}, T, minconf)
             ap_genrules!(f, H1, T, minconf, R)
         end
     end
-    return R
+    return unique(R)
 end
 
 v = [[1, 2], [1, 3], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5]]
