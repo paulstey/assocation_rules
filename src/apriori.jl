@@ -70,35 +70,6 @@ v = [rand([1, 2, 3, 4, 5], 10) for x = 1:1000];
 
 
 
-# # matlab translation
-# function apriori_gen3{M}(freq_sets::Vector{Vector{M}}, k::Int)
-#
-#     if k == 2
-#         Ck = collect(combinations(freq_sets, 2))
-#     elseif k > 2
-#         Ck = Array{Array{M, 1}, 1}(0)
-#         n = size(freq_sets, 1)
-#         for i = 1:n
-#             for j = (i+1):n
-#                 pair1 = sort(freq_sets[i][1:k-2])
-#                 pair2 = sort(freq_sets[j][1:k-2])
-#
-#                 # println(pair1, " ", pair2)
-#                 if pair1 == pair2
-#                     # c = union(freq_sets[i], freq_sets[j])
-#                     c = union(freq_sets[i], freq_sets[j])
-#                     push!(Ck, sort(c))
-#                 end
-#             end
-#         end
-#     end
-#     return Ck
-# end
-#
-# @time res1 = apriori_gen3([[1, 2], [1, 3], [1, 2], [2, 3]], 3)
-# @time res2 = apriori_gen([[1, 2], [1, 3], [1, 2], [2, 3]])
-
-
 
 
 
@@ -106,8 +77,8 @@ v = [rand([1, 2, 3, 4, 5], 10) for x = 1:1000];
 
 
 # Find frequent itemsets from transactions
-# @T: array of transactions (each is a set)
-# @minsup: minimum support
+# T: array of transactions (each is a set)
+# minsup: minimum support
 # NOTE: This function agrees with R
 function freq_itemset_gen{M}(T::Array{Array{M, 1}, 1}, minsup::Float64)
 
@@ -150,10 +121,10 @@ freq_itemset_gen(v, 0.2)
 
 
 
-# R: Array of rules
-# f: frequent itemset
-# H: Array of rule consequents (also arrays)
+# fk: frequent itemset
+# Hm: Array of rule consequents (also arrays)
 # T: Array of transactions
+# R: Array of rules
 
 function ap_genrules!{M}(fk::Vector{M}, Hm::Vector{Vector{M}}, T::Vector{Vector{M}}, minconf, R)
     k = length(fk)
@@ -161,6 +132,8 @@ function ap_genrules!{M}(fk::Vector{M}, Hm::Vector{Vector{M}}, T::Vector{Vector{
 
     if k > m+1
         H_mplus1 = apriori_gen(Hm)
+        warn("here is Hm")
+        println(Hm)
         warn("here is H_m+1")
         println(H_mplus1)
         indcs_to_drop = Array{Int}(0)
@@ -204,81 +177,43 @@ rules
 
 
 
+# generate rules for one-item consequents
+function gen_onerules{M}(F1::Vector{Vector{M}})
+    freq1 = get_unique_items(F1)
+    sort!(freq1)
+    n = length(freq1)
+    R = Vector{Rule}(0)
 
-function ap_genrules2!{M}(fk::Vector{M}, T::Vector{Vector{M}}, minconf, R)
-    k = length(fk)
-    H1 = map(x -> M[x], fk)
-    m = length(H1)
-
-    if k > m+1
-        H_mplus1 = apriori_gen(H1)
-        warn("here is H_m+1")
-        println(H_mplus1)
-        indcs_to_drop = Array{Int}(0)
-
-        for (idx, h_mp1) in enumerate(H_mplus1)
-            p = setdiff(fk, h_mp1)
-
-            if conf(p, h_mp1, T) ≥ minconf
-                push!(R, Rule(p, h_mp1))
-            else
-                push!(indcs_to_drop, idx)
+    # empty antecedent rules
+    for f in freq1
+        push!(R, Rule(M[], [f]))
+    end
+    # one-consequent rules
+    for i = 1:n
+        for j = 1:n
+            if i ≠ j
+                push!(R, Rule([freq1[i]], [freq1[j]]))
             end
         end
-
-        # remove the indices of consequents with low confidence
-        reverse!(indcs_to_drop)
-        for indx in indcs_to_drop
-            deleteat!(H_mplus1, indx)
-        end
-        ap_genrules2!(fk, H_mplus1, T, minconf, R)
     end
+    return R
 end
-
-rules = Vector{Rule}(0)
-freq = [1, 2, 3]
-trans = [[1, 2], [1, 3], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5]]
-ap_genrules2!(freq, trans, 0.01, rules)
-rules
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
 
 
 # Generate rules from frequent itemsets
-# @x: list of frequent itemsets
-# @T: Transaction list
+# freq: 3-level nested vectors of frequent itemsets
+# T: transaction list
+# minconf: minimum confidence threshold
 function generate_rules{M}(freq::Vector{Vector{Vector{M}}}, T, minconf)
     k_max = length(freq)
-    # if k_max ≤ 1;
-    #     return Array{M}(0)          # F contains 1-itemsets only; no rules generated.
-    # end
-    R = Array{Rule}(0)
 
-    # turn three-level-nested vector of frequent itemsets into two-level
+    # get one-consequent rules (and empty antecedent rules)
+    R = gen_onerules(freq[1])
+
+    # turn 3-level-nested vector of frequent itemsets into 2-level
     F = Array{Array, 1}(0)
     for i = 1:k_max
         map(x -> push!(F, x), freq)
@@ -286,10 +221,8 @@ function generate_rules{M}(freq::Vector{Vector{Vector{M}}}, T, minconf)
 
     for k = 1:k_max
         H1 = map(x -> [x], get_unique_items(F[k]))
-        reverse!(push!(H1, Array{M}(0)))
-        display(H1)
+
         for f in F[k]
-            println("f: ", f)
             ap_genrules!(f, H1, T, minconf, R)
         end
     end
@@ -301,53 +234,7 @@ freq_itemsets = freq_itemset_gen(v, 0.2)
 
 rules = generate_rules(freq_itemsets, v, 0.01)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+show_rulestats(rules, T)
 
 
 
