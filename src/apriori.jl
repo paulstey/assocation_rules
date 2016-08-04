@@ -21,11 +21,6 @@ function get_unique_items(T::Array{Array{Int, 1}, 1})
     return [x for x in keys(dict)]
 end
 
-# v = [[1, 2, 3], [1, 2, 4], [1, 3, 5], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4], [1, 4, 5], [3, 4, 5]]
-v = [rand([1, 2, 3, 4, 5], 10) for x = 1:100_000];
-
-@time get_unique_items(v);
-@time unique(reduce(append!, v));
 
 
 
@@ -64,9 +59,9 @@ function apriori_gen{M}(x::Array{Array{M, 1}, 1})
     return C              # vector of candidate itemsets: C_{k}
 end
 
-v = [rand([1, 2, 3, 4, 5], 10) for x = 1:1000];
+# v = [rand([1, 2, 3, 4, 5], 10) for x = 1:1000];
 # @code_warntype apriori_gen(v)
-@time apriori_gen(v)
+# @time apriori_gen(v)
 
 
 
@@ -175,54 +170,35 @@ rules
 
 
 
-
-
-# generate rules for one-item consequents
-function gen_onerules{M}(F1::Vector{Vector{M}})
-    freq1 = get_unique_items(F1)
-    sort!(freq1)
-    n = length(freq1)
-    R = Vector{Rule}(0)
-
-    # empty antecedent rules
-    for f in freq1
-        push!(R, Rule(M[], [f]))
-    end
-    # one-consequent rules
-    for i = 1:n
-        for j = 1:n
-            if i ≠ j
-                push!(R, Rule([freq1[i]], [freq1[j]]))
-            end
+function gen_onerules!{M}(fk::Vector{M}, H1::Vector{Vector{M}}, R::Vector{Rule}, T, minconf)
+    m = length(H1)
+    for j = 1:m
+        if !(H1[j][1] in fk) && conf(fk, H1[j], T) ≥ minconf
+            push!(R, Rule(fk, H1[j]))
         end
     end
-    return R
 end
 
-
-
+rule1 = Vector{Rule}(0)
+gen_onerules!([1], [[1], [2], [3]], rule1, [[1, 2], [2, 3], [1, 3]], 0.01)
 
 
 # Generate rules from frequent itemsets
 # freq: 3-level nested vectors of frequent itemsets
 # T: transaction list
 # minconf: minimum confidence threshold
-function generate_rules{M}(freq::Vector{Vector{Vector{M}}}, T, minconf)
-    k_max = length(freq)
+function gen_rules{M}(F::Vector{Vector{Vector{M}}}, T, minconf)
+    k_max = length(F)
 
     # get one-consequent rules (and empty antecedent rules)
-    R = gen_onerules(freq[1])
-
-    # turn 3-level-nested vector of frequent itemsets into 2-level
-    F = Array{Array, 1}(0)
-    for i = 1:k_max
-        map(x -> push!(F, x), freq)
-    end
+    R = Vector{Rule}(0)
 
     for k = 1:k_max
         H1 = map(x -> [x], get_unique_items(F[k]))
 
         for f in F[k]
+            display(f)
+            gen_onerules!(f, H1, R, T, minconf)
             ap_genrules!(f, H1, T, minconf, R)
         end
     end
@@ -232,7 +208,8 @@ end
 v = [[1, 2], [1, 3], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5]]
 freq_itemsets = freq_itemset_gen(v, 0.2)
 
-rules = generate_rules(freq_itemsets, v, 0.01)
+rules = gen_rules(freq_itemsets, v, 0.01)
+
 
 show_rulestats(rules, T)
 
