@@ -49,8 +49,6 @@ function apriori_gen{M}(x::Array{Array{M, 1}, 1})
                 end
             end
             if keep_candidate
-                # Julia isn't inferring the type of c below, but
-                # telling the compiler doesn't improve speed
                 c = [x[i]; x[j][end]]
                 push!(C, sort!(c))
             end
@@ -119,25 +117,29 @@ freq_itemset_gen(v, 0.2)
 # fk: frequent itemset
 # Hm: Array of rule consequents (also arrays)
 # T: Array of transactions
+# minsupp: Minimum support threshold
+# minconf: Minimum confidence threshold
 # R: Array of rules
 
-function ap_genrules!{M}(fk::Vector{M}, Hm::Vector{Vector{M}}, T::Vector{Vector{M}}, minconf, R)
+function ap_genrules!{M}(fk::Vector{M}, Hm::Vector{Vector{M}}, T::Vector{Vector{M}}, minsupp, minconf, R)
     k = length(fk)
     m = length(Hm[1])            # NOTE: will need to confirm length(Hm) ≥ 1
 
     if k > m+1
         H_mplus1 = apriori_gen(Hm)
-        warn("here is Hm")
-        println(Hm)
-        warn("here is H_m+1")
-        println(H_mplus1)
         indcs_to_drop = Array{Int}(0)
 
         for (idx, h_mp1) in enumerate(H_mplus1)
             p = setdiff(fk, h_mp1)
+            xconf = conf(p, h_mp1, T)
 
-            if conf(p, h_mp1, T) ≥ minconf
-                push!(R, Rule(p, h_mp1))
+            if xconf ≥ minconf
+                xsupp = supp(p, h_mp1, T)
+
+                if xsupp ≥ minsupp
+                    xlift = lift(xconf, h_mp1, T)
+                    push!(R, Rule(p, h_mp1, xsupp, xconf, xlift))
+                end
             else
                 push!(indcs_to_drop, idx)
             end
@@ -148,7 +150,7 @@ function ap_genrules!{M}(fk::Vector{M}, Hm::Vector{Vector{M}}, T::Vector{Vector{
         for indx in indcs_to_drop
             deleteat!(H_mplus1, indx)
         end
-        ap_genrules!(fk, H_mplus1, T, minconf, R)
+        ap_genrules!(fk, H_mplus1, T, minsupp, minconf, R)
     end
 end
 
@@ -156,7 +158,7 @@ rules = Vector{Rule}(0)
 freq = [1, 2]
 consq = [Int[], [1], [2], [3], [4], [5]]
 trans = [[1, 2], [1, 3], [2, 4], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5], [2, 3, 4, 6]]
-ap_genrules!(freq, consq, trans, 0.01, rules)
+ap_genrules!(freq, consq, trans, 0.20, 0.01, rules)
 rules
 
 
@@ -164,55 +166,70 @@ rules = Vector{Rule}(0)
 freq = [1, 2, 3, 4]
 consq = [[1], [2], [3], [4]]
 trans = [[1], [2], [1, 2], [1, 3], [2, 4], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5], [2, 3, 4, 6]]
-ap_genrules!(freq, consq, trans, 0.01, rules)
+ap_genrules!(freq, consq, trans, 0.2, 0.01, rules)
 rules
 
 
 
 
-function gen_onerules!{M}(fk::Vector{M}, H1::Vector{Vector{M}}, R::Vector{Rule}, T, minconf)
+function gen_onerules!{M}(fk::Vector{M}, H1::Vector{Vector{M}}, R::Vector{Rule}, T, minsupp, minconf)
     m = length(H1)
     for j = 1:m
-        if !(H1[j][1] in fk) && conf(fk, H1[j], T) ≥ minconf
-            push!(R, Rule(fk, H1[j]))
+        xconf = conf(fk, H1[j], T)
+        if !(H1[j][1] in fk) && xconf ≥ minconf
+            xsupp = supp(fk, H1[j], T)
+            if xsupp ≥ minsupp
+                xlift = lift(xconf, H1[j], T)
+                push!(R, Rule(fk, H1[j], xsupp, xconf, xlift))
+            end
         end
     end
 end
 
 rule1 = Vector{Rule}(0)
-gen_onerules!([1], [[1], [2], [3]], rule1, [[1, 2], [2, 3], [1, 3]], 0.01)
+@time gen_onerules!([1], [[1], [2], [3]], rule1, [[1, 2], [2, 3], [1, 3]], 0.2, 0.01)
 
 
 # Generate rules from frequent itemsets
-# freq: 3-level nested vectors of frequent itemsets
+# F: 3-level nested vectors of frequent itemsets
 # T: transaction list
 # minconf: minimum confidence threshold
-function gen_rules{M}(F::Vector{Vector{Vector{M}}}, T, minconf)
+# mult_consq: whether or not to compute rules with multiple consequents
+function gen_rules{M}(F::Vector{Vector{Vector{M}}}, T, minsupp, minconf, mult_consq = true)
     k_max = length(F)
-
-    # get one-consequent rules (and empty antecedent rules)
     R = Vector{Rule}(0)
 
     for k = 1:k_max
         H1 = map(x -> [x], get_unique_items(F[k]))
 
         for f in F[k]
-            display(f)
-            gen_onerules!(f, H1, R, T, minconf)
-            ap_genrules!(f, H1, T, minconf, R)
+            gen_onerules!(f, H1, R, T, minsupp, minconf)
+            if mult_consq
+                ap_genrules!(f, H1, T, minsupp, minconf, R)
+            end
         end
     end
     return unique(R)
 end
 
-v = [[1, 2], [1, 3], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5]]
+v = [[1, 2], [1, 3], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5],
+     [2, 4, 5, 6], [1, 3, 5, 6], [2, 3, 4, 5, 6], [1, 3, 4, 5, 6], [2, 3, 4, 5, 6]]
+
 freq_itemsets = freq_itemset_gen(v, 0.2)
 
-rules = gen_rules(freq_itemsets, v, 0.01)
+rules = gen_rules(freq_itemsets, v, 0.2, 0.01)
 
 
-show_rulestats(rules, T)
+show_rulestats(rules, v)
 
+
+
+
+rs = Vector{Rule}(0)
+a = Rule([1], [2])
+b = Rule([1], [2])
+push!(rs, a)
+push!(rs, b)
 
 
 
