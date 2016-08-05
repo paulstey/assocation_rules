@@ -73,7 +73,7 @@ end
 # T: array of transactions (each is a set)
 # minsup: minimum support
 # NOTE: This function agrees with R
-function freq_itemset_gen{M}(T::Array{Array{M, 1}, 1}, minsup::Float64)
+function freq_itemsets{M}(T::Array{Array{M, 1}, 1}, minsup::Float64)
 
     I = get_unique_items(T)
 
@@ -100,12 +100,12 @@ end
 v = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4], [1, 4, 5], [3, 4, 5]]
 v = [[1, 2], [1, 3], [2, 4], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5], [2, 3, 4, 6]]
 # v = [rand([1, 2, 3, 4, 5], 10) for x = 1:1000];
-# @code_warntype freq_itemset_gen(v, 0.5)
+# @code_warntype freq_itemsets(v, 0.5)
 
 
 
 v = [[1, 2, 3], [1, 2, 3], [1, 2, 3],  [1, 2, 5], [1, 3, 4], [1, 4, 5], [2, 3, 4], [2, 3, 4], [2, 3, 5], [3, 4, 5]]
-freq_itemset_gen(v, 0.2)
+freq_itemsets(v, 0.2)
 
 
 
@@ -215,9 +215,9 @@ end
 v = [[1, 2], [1, 3], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5],
      [2, 4, 5, 6], [1, 3, 5, 6], [2, 3, 4, 5, 6], [1, 3, 4, 5, 6], [2, 3, 4, 5, 6]]
 
-freq_itemsets = freq_itemset_gen(v, 0.2)
+fr = freq_itemsets(v, 0.2)
 
-rules = gen_rules(freq_itemsets, v, 0.2, 0.01)
+rules = gen_rules(fr, v, 0.2, 0.01)
 
 
 show_rulestats(rules, v)
@@ -230,6 +230,16 @@ a = Rule([1], [2])
 b = Rule([1], [2])
 push!(rs, a)
 push!(rs, b)
+
+
+
+
+
+function aprior(T, minsupp, minconf)
+    F = freq_itemsets(T, minsupp)
+    R = gen_rules(F, T, minsupp, minconf)
+    return R
+end
 
 
 
