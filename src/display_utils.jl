@@ -1,14 +1,35 @@
 
-function pretty_pq(v)
+function pretty_pq(v, maxchar)
     if isempty(v)
         res = "{}"
     else
-        v1 = replace(string(v), "[", "{")
-        res = replace(string(v1), "]", "}")
+        res = replace(string(v), "[", "{")
+        res = replace(res, "]", "}")
     end
-    return res
+    res = replace(res, r"\"|String", "")
+    n = length(res)
+    out = ""
+    str = 1
+    stp = maxchar
+    persist = true
+    while persist
+        if stp < n
+            offset = match(r",[^,]*$", res[str:stp]).offset
+            stp = str + offset - 1
+        else
+            stp = n
+            persist = false
+        end
+        out = string(out, res[str:stp], "\n")
+        str = stp + 1
+        stp = str + maxchar - 1
+        stp = stp > n ? n : stp
+    end
+    return out
 end
 
+v = ["this", "is", "my", "vector", "which", "contains", "a", "number", "of", "variable-length", "terms", "such", "as", "these."]
+pretty_pq(v, 25)
 
 function prettyprint_rulestats(r::Rule, plen, qlen, T)
     p = pretty_pq(r.p)

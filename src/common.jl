@@ -3,7 +3,7 @@ import Base.==
 import Base.unique
 
 
-type Rule{T}
+immutable Rule{T}
     p::Array{T}             # antecedent (rhs)
     q::Array{T}             # consequent (lhs)
     supp::Float64
