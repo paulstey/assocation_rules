@@ -14,6 +14,7 @@ function pretty_pq(v, maxchar)
     persist = true
     while persist
         if stp < n
+            # this regex finds the last comma
             offset = match(r",[^,]*$", res[str:stp]).offset
             stp = str + offset - 1
         else
