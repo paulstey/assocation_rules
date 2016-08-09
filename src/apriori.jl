@@ -1,5 +1,5 @@
 # Find k-freq-itemset in given transactions of items queried together
-
+using StatsBase
 include("./src/common.jl")
 include("./src/display_utils.jl")
 
@@ -8,9 +8,9 @@ include("./src/display_utils.jl")
 # Given a vector of transactions (each is a vector), this
 # function returns a single array with all the unique items.
 
-function get_unique_items(T::Array{Array{Int, 1}, 1})
-    I = Array{Int, 1}(0)
-    dict = Dict{Int, Int}()
+function get_unique_items{M}(T::Array{Array{M, 1}, 1})
+    I = Array{M, 1}(0)
+    dict = Dict{M, Int}()
 
     # loop over transactions, store each item in I
     for t in T
@@ -21,8 +21,9 @@ function get_unique_items(T::Array{Array{Int, 1}, 1})
     return [x for x in keys(dict)]
 end
 
-
-
+# l = [sample([1, 2, 3, 4, 5], 4) for x in 1:10000]
+# @code_warntype get_unique_items(l)
+# @time get_unique_items(l)
 
 # Given C_{k-1}, which is a vector of transactions (and each
 # transaction is a vector), this function returns the candidate
@@ -49,7 +50,7 @@ function apriori_gen{M}(x::Array{Array{M, 1}, 1})
                 end
             end
             if keep_candidate
-                c = [x[i]; x[j][end]]
+                c::Array{M, 1} = vcat(x[i], x[j][end])
                 push!(C, sort!(c))
             end
         end
@@ -59,7 +60,7 @@ end
 
 # v = [rand([1, 2, 3, 4, 5], 10) for x = 1:1000];
 # @code_warntype apriori_gen(v)
-# @time apriori_gen(v)
+# @time apriori_gen(v);
 
 
 
@@ -97,15 +98,15 @@ function freq_itemsets{M}(T::Array{Array{M, 1}, 1}, minsup::Float64)
     return F
 end
 
-v = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4], [1, 4, 5], [3, 4, 5]]
-v = [[1, 2], [1, 3], [2, 4], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5], [2, 3, 4, 6]]
+# v = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4], [1, 4, 5], [3, 4, 5]]
+# v = [[1, 2], [1, 3], [2, 4], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5], [2, 3, 4, 6]]
 # v = [rand([1, 2, 3, 4, 5], 10) for x = 1:1000];
 # @code_warntype freq_itemsets(v, 0.5)
 
 
 
-v = [[1, 2, 3], [1, 2, 3], [1, 2, 3],  [1, 2, 5], [1, 3, 4], [1, 4, 5], [2, 3, 4], [2, 3, 4], [2, 3, 5], [3, 4, 5]]
-freq_itemsets(v, 0.2)
+# v = [[1, 2, 3], [1, 2, 3], [1, 2, 3],  [1, 2, 5], [1, 3, 4], [1, 4, 5], [2, 3, 4], [2, 3, 4], [2, 3, 5], [3, 4, 5]]
+# freq_itemsets(v, 0.2)
 
 
 
@@ -154,20 +155,20 @@ function ap_genrules!{M}(fk::Vector{M}, Hm::Vector{Vector{M}}, T::Vector{Vector{
     end
 end
 
-rules = Vector{Rule}(0)
-freq = [1, 2]
-consq = [Int[], [1], [2], [3], [4], [5]]
-trans = [[1, 2], [1, 3], [2, 4], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5], [2, 3, 4, 6]]
-ap_genrules!(freq, consq, trans, 0.20, 0.01, rules)
-rules
+# rules = Vector{Rule}(0)
+# freq = [1, 2]
+# consq = [Int[], [1], [2], [3], [4], [5]]
+# trans = [[1, 2], [1, 3], [2, 4], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5], [2, 3, 4, 6]]
+# @code_warntype ap_genrules!(freq, consq, trans, 0.20, 0.01, rules)
+# rules
 
 
-rules = Vector{Rule}(0)
-freq = [1, 2, 3, 4]
-consq = [[1], [2], [3], [4]]
-trans = [[1], [2], [1, 2], [1, 3], [2, 4], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5], [2, 3, 4, 6]]
-ap_genrules!(freq, consq, trans, 0.2, 0.01, rules)
-rules
+# rules = Vector{Rule}(0)
+# freq = [1, 2, 3, 4]
+# consq = [[1], [2], [3], [4]]
+# trans = [[1], [2], [1, 2], [1, 3], [2, 4], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5], [2, 3, 4, 6]]
+# ap_genrules!(freq, consq, trans, 0.2, 0.01, rules)
+# rules
 
 
 
@@ -176,8 +177,10 @@ function gen_onerules!{M}(fk::Vector{M}, H1::Vector{Vector{M}}, R::Vector{Rule},
     m = length(H1)
     for j = 1:m
         xconf = conf(fk, H1[j], T)
+        println(H1[j], " ", fk, xconf)
         if !(H1[j][1] in fk) && xconf ≥ minconf
             xsupp = supp(fk, H1[j], T)
+            println(xsupp)
             if xsupp ≥ minsupp
                 xlift = lift(xconf, H1[j], T)
                 push!(R, Rule(fk, H1[j], xsupp, xconf, xlift))
@@ -187,24 +190,24 @@ function gen_onerules!{M}(fk::Vector{M}, H1::Vector{Vector{M}}, R::Vector{Rule},
 end
 
 rule1 = Vector{Rule}(0)
-@time gen_onerules!([1], [[1], [2], [3]], rule1, [[1, 2], [2, 3], [1, 3]], 0.2, 0.01)
+gen_onerules!([1], [[1], [2], [3]], rule1, [[1, 2], [2, 3], [1, 3]], 0.1, 0.01)
 
 
 # Generate rules from frequent itemsets
 # F: 3-level nested vectors of frequent itemsets
 # T: transaction list
 # minconf: minimum confidence threshold
-# mult_consq: whether or not to compute rules with multiple consequents
-function gen_rules{M}(F::Vector{Vector{Vector{M}}}, T, minsupp, minconf, mult_consq = true)
+# multi_consquents: whether or not to compute rules with multiple consequents
+function gen_rules{M}(F::Array{Array{Array{M, 1}, 1}, 1}, T, minsupp, minconf, multi_consquents = true)
     k_max = length(F)
-    R = Vector{Rule}(0)
+    R = Array{Rule, 1}(0)
 
     for k = 1:k_max
         H1 = map(x -> [x], get_unique_items(F[k]))
 
         for f in F[k]
             gen_onerules!(f, H1, R, T, minsupp, minconf)
-            if mult_consq
+            if multi_consquents
                 ap_genrules!(f, H1, T, minsupp, minconf, R)
             end
         end
@@ -217,7 +220,7 @@ v = [[1, 2], [1, 3], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5]
 
 fr = freq_itemsets(v, 0.2)
 
-rules = gen_rules(fr, v, 0.2, 0.01)
+rules = gen_rules(fr, v, 0.1, 0.8, false)
 
 
 show_rulestats(rules, v)
@@ -234,14 +237,24 @@ push!(rs, b)
 
 
 
-
-function aprior(T, minsupp, minconf)
+# This function has constant memory footprint regardless
+# of the input size of T (for fixed minsupp and minconf)
+function aprior(T, minsupp, minconf, multi_consquents = true)
     F = freq_itemsets(T, minsupp)
-    R = gen_rules(F, T, minsupp, minconf)
+    R = gen_rules(F, T, minsupp, minconf, multi_consquents)
     return R
 end
 
+l = [sample([1, 2, 3, 4, 5], 5, replace = false) for x in 1:100_000]
 
+fk = freq_itemsets(l, 0.1)
+
+rule_vec = Array{Rule, 1}(0)
+gen_onerules!([2], fk[1], rule_vec, l, 0.1, 0.8)
+rule_vec
+
+
+@time rules = aprior(l, 0.1, 0.8, false);
 
 
 #
