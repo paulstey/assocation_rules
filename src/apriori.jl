@@ -26,9 +26,9 @@ end
 # frequent item sets C_k
 function apriori_gen{M}(x::Array{Array{M, 1}, 1})
     n = length(x)
-    if n < 1
-        return nothing
-    end 
+    # if n < 1
+    #     return Array{Array{M, 1}, 1}(0)
+    # end
     m = length(x[1]) - 1
     C = Array{Array{M, 1}, 1}(0)
 
@@ -60,7 +60,7 @@ end
 # v = [rand([1, 2, 3, 4, 5], 10) for x = 1:1000];
 # @code_warntype apriori_gen(v)
 # @time apriori_gen(v);
-
+#
 
 
 
@@ -123,7 +123,10 @@ end
 
 function ap_genrules!{M}(fk::Vector{M}, Hm::Vector{Vector{M}}, T::Vector{Vector{M}}, minsupp, minconf, R)
     k = length(fk)
-    m = length(Hm[1])            # NOTE: will need to confirm length(Hm) ≥ 1
+    # if isempty(Hm)
+    #     return nothing
+    # end
+    m = length(Hm[1])
 
     if k > m+1
         H_mplus1 = apriori_gen(Hm)
@@ -168,8 +171,14 @@ end
 # ap_genrules!(freq, consq, trans, 0.2, 0.01, rules)
 # rules
 
+fk::Vector{M},
+H1::Vector{Vector{M}},
+R::Vector{Rule},
+T,
+minsupp,
+minconf
 
-function gen_onerules!{M}(fk::Vector{M}, H1::Vector{Vector{M}}, R::Vector{Rule}, T, minsupp, minconf)
+function gen_onerules!(fk, H1, R, T, minsupp, minconf)
     m = length(H1)
     for j = 1:m
         xconf = conf(fk, H1[j], T)
@@ -238,11 +247,11 @@ end
 #
 # fk = freq_itemsets(l, 0.1)
 #
-# rule_vec = Array{Rule, 1}(0)
-# gen_onerules!([2], fk[1], rule_vec, l, 0.1, 0.8)
-# rule_vec
+# # rule_vec = Array{Rule, 1}(0)
+# # gen_onerules!([2], fk[1], rule_vec, l, 0.1, 0.8)
+# # rule_vec
 #
-# @time rules = aprior(l, 0.1, 0.8, false);
-
+# @time rules = apriori(l, 0.1, 0.8, false);
+#
 
 #

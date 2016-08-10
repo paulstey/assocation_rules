@@ -28,7 +28,7 @@ end
 function σ(x, T)
     res = 0
     for t in T
-        if x ⊆ t
+        if x in t
             res += 1
         end
     end

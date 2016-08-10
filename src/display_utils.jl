@@ -1,4 +1,4 @@
-# using Formatting 
+# using Formatting
 
 function wrap_line(v, maxchar)
     if isempty(v)
@@ -50,7 +50,7 @@ function prettyprint_rulestats(r::Rule, plen, qlen)
     println(rpad(p, plen, " "), " => ", rpad(q, qlen, " "), " $(sprintf1(fmt, r.supp)) $(sprintf1(fmt, r.conf)) $(sprintf1(fmt, r.lift))", )
 end
 
-prettyprint_rulestats(rules[1], 10, 10)
+# prettyprint_rulestats(rules[1], 10, 10)
 
 function show_rulestats(rs::Vector{Rule})
     n = length(rs)

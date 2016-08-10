@@ -31,6 +31,6 @@ rule1 = Vector{Rule}(0)
 @time gen_onerules!([1], [[1], [2], [3]], rule1, [[1, 2], [2, 3], [1, 3]], 0.2, 0.01)
 
 
-v = [rand([1, 2, 3, 4, 5, 6], 10) for x = 1:1000];
+v = [rand([1, 2, 3, 4, 5, 6], 10) for x = 1:100];
 rules = apriori(v, 0.01, 0.08)
 show_rulestats(rules)
