@@ -100,5 +100,12 @@ sim_data <- function(n) {
     return(out)
 }
 
-l <- sim_data(1000000)
+l <- sim_data(100000)
+
+system.time(expr = {
+    rules <- apriori(l, parameter = list(
+        supp = 0.1, conf = 0.8, target = "rules"))
+    }
+)
+inspect(rules)
 

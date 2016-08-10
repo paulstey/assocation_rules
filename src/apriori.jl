@@ -1,8 +1,4 @@
 # Find k-freq-itemset in given transactions of items queried together
-using StatsBase
-include("./src/common.jl")
-include("./src/display_utils.jl")
-
 
 
 # Given a vector of transactions (each is a vector), this
@@ -30,6 +26,9 @@ end
 # frequent item sets C_k
 function apriori_gen{M}(x::Array{Array{M, 1}, 1})
     n = length(x)
+    if n < 1
+        return nothing
+    end 
     m = length(x[1]) - 1
     C = Array{Array{M, 1}, 1}(0)
 
@@ -162,7 +161,6 @@ end
 # @code_warntype ap_genrules!(freq, consq, trans, 0.20, 0.01, rules)
 # rules
 
-
 # rules = Vector{Rule}(0)
 # freq = [1, 2, 3, 4]
 # consq = [[1], [2], [3], [4]]
@@ -171,16 +169,12 @@ end
 # rules
 
 
-
-
 function gen_onerules!{M}(fk::Vector{M}, H1::Vector{Vector{M}}, R::Vector{Rule}, T, minsupp, minconf)
     m = length(H1)
     for j = 1:m
         xconf = conf(fk, H1[j], T)
-        println(H1[j], " ", fk, xconf)
         if !(H1[j][1] in fk) && xconf ≥ minconf
             xsupp = supp(fk, H1[j], T)
-            println(xsupp)
             if xsupp ≥ minsupp
                 xlift = lift(xconf, H1[j], T)
                 push!(R, Rule(fk, H1[j], xsupp, xconf, xlift))
@@ -189,8 +183,8 @@ function gen_onerules!{M}(fk::Vector{M}, H1::Vector{Vector{M}}, R::Vector{Rule},
     end
 end
 
-rule1 = Vector{Rule}(0)
-gen_onerules!([1], [[1], [2], [3]], rule1, [[1, 2], [2, 3], [1, 3]], 0.1, 0.01)
+# rule1 = Vector{Rule}(0)
+# gen_onerules!([1], [[1], [2], [3]], rule1, [[1, 2], [2, 3], [1, 3]], 0.1, 0.01)
 
 
 # Generate rules from frequent itemsets
@@ -215,46 +209,40 @@ function gen_rules{M}(F::Array{Array{Array{M, 1}, 1}, 1}, T, minsupp, minconf, m
     return unique(R)
 end
 
-v = [[1, 2], [1, 3], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5],
-     [2, 4, 5, 6], [1, 3, 5, 6], [2, 3, 4, 5, 6], [1, 3, 4, 5, 6], [2, 3, 4, 5, 6]]
+# v = [[1, 2], [1, 3], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5],
+#      [2, 4, 5, 6], [1, 3, 5, 6], [2, 3, 4, 5, 6], [1, 3, 4, 5, 6], [2, 3, 4, 5, 6]]
+#
+# fr = freq_itemsets(v, 0.2)
+# rules = gen_rules(fr, v, 0.1, 0.8, false)
+#
+# show_rulestats(rules, v)
 
-fr = freq_itemsets(v, 0.2)
-
-rules = gen_rules(fr, v, 0.1, 0.8, false)
-
-
-show_rulestats(rules, v)
-
-
-
-
-rs = Vector{Rule}(0)
-a = Rule([1], [2])
-b = Rule([1], [2])
-push!(rs, a)
-push!(rs, b)
-
+# rs = Vector{Rule}(0)
+# a = Rule([1], [2])
+# b = Rule([1], [2])
+# push!(rs, a)
+# push!(rs, b)
+#
 
 
 
 # This function has constant memory footprint regardless
 # of the input size of T (for fixed minsupp and minconf)
-function aprior(T, minsupp, minconf, multi_consquents = true)
+function apriori(T, minsupp, minconf, multi_consquents = true)
     F = freq_itemsets(T, minsupp)
     R = gen_rules(F, T, minsupp, minconf, multi_consquents)
     return R
 end
 
-l = [sample([1, 2, 3, 4, 5], 5, replace = false) for x in 1:100_000]
-
-fk = freq_itemsets(l, 0.1)
-
-rule_vec = Array{Rule, 1}(0)
-gen_onerules!([2], fk[1], rule_vec, l, 0.1, 0.8)
-rule_vec
-
-
-@time rules = aprior(l, 0.1, 0.8, false);
+# l = [sample([1, 2, 3, 4, 5], 5, replace = false) for x in 1:100_000]
+#
+# fk = freq_itemsets(l, 0.1)
+#
+# rule_vec = Array{Rule, 1}(0)
+# gen_onerules!([2], fk[1], rule_vec, l, 0.1, 0.8)
+# rule_vec
+#
+# @time rules = aprior(l, 0.1, 0.8, false);
 
 
 #
