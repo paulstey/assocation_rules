@@ -27,9 +27,17 @@ end
 # Support Count: σ(x) = | {t_i|x ⊆ t_i, t_i ∈ T}|
 function σ(x, T)
     res = 0
-    for t in T
-        if x in t
-            res += 1
+    if !isa(Array, eltype(x))
+        for t in T
+            if x in t
+                res += 1
+            end
+        end
+    elseif isa(Array, eltype(x))
+        for t in T
+            if x ⊆ t
+                res += 1
+            end
         end
     end
     return res

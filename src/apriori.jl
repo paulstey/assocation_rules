@@ -121,7 +121,13 @@ end
 # minconf: Minimum confidence threshold
 # R: Array of rules
 
-function ap_genrules!{M}(fk::Vector{M}, Hm::Vector{Vector{M}}, T::Vector{Vector{M}}, minsupp, minconf, R)
+# fk::Vector{M},
+# Hm::Vector{Vector{M}},
+# T::Vector{Vector{M}},
+# minsupp,
+# minconf,
+# R
+function ap_genrules!(fk, Hm, T, minsupp, minconf, R)
     k = length(fk)
     # if isempty(Hm)
     #     return nothing
@@ -171,12 +177,12 @@ end
 # ap_genrules!(freq, consq, trans, 0.2, 0.01, rules)
 # rules
 
-fk::Vector{M},
-H1::Vector{Vector{M}},
-R::Vector{Rule},
-T,
-minsupp,
-minconf
+# fk::Vector{M},
+# H1::Vector{Vector{M}},
+# R::Vector{Rule},
+# T,
+# minsupp,
+# minconf
 
 function gen_onerules!(fk, H1, R, T, minsupp, minconf)
     m = length(H1)
