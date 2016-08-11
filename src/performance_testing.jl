@@ -34,3 +34,18 @@ rule1 = Vector{Rule}(0)
 v = [rand([1, 2, 3, 4, 5, 6], 10) for x = 1:100];
 rules = apriori(v, 0.01, 0.08)
 show_rulestats(rules)
+
+
+
+# Example using UCI Adult dataset
+
+using DataFrames
+
+d = readtable("./data/adult.csv", nastrings = ["?"])
+complete_cases!(d)
+
+dmat = convert(Array, d)
+transactions = make_transactions(dmat)
+@time rules = apriori(transactions[1:100], 0.41, 0.01)
+
+show_rulestats(rules)

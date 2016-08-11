@@ -7,13 +7,15 @@ function wrap_line(v, maxchar)
         res = replace(string(v), "[", "{")
         res = replace(res, "]", "}")
     end
-    res = replace(res, r"\"|String", "")
+    res = replace(res, r"\"|String|Any", "")
     n = length(res)
     out = ""
     str = 1
     stp = maxchar
     if n > maxchar
         keep_splitting = true
+        iter = 1
+
         while keep_splitting
             if stp < n
                 # this regex finds the last comma
@@ -23,10 +25,15 @@ function wrap_line(v, maxchar)
                 stp = n
                 keep_splitting = false
             end
-            out = string(out, res[str:stp], "\n")
+            if iter == 1
+                out = string(out, res[str:stp])
+            else
+                out = string("\n", out, res[str:stp])
+            end
             str = stp + 1
             stp = str + maxchar - 1
             stp = stp > n ? n : stp
+            iter += 1
         end
     elseif n ≤ maxchar
         out = res

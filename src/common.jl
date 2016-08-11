@@ -3,9 +3,9 @@ import Base.==
 import Base.unique
 
 
-immutable Rule{T}
-    p::Array{T}             # antecedent (rhs)
-    q::Array{T}             # consequent (lhs)
+immutable Rule
+    p::Array            # antecedent (rhs)
+    q::Array           # consequent (lhs)
     supp::Float64
     conf::Float64
     lift::Float64
@@ -25,23 +25,27 @@ end
 
 
 # Support Count: σ(x) = | {t_i|x ⊆ t_i, t_i ∈ T}|
-function σ(x, T)
+function σ(x::Array, T)
     res = 0
-    if !isa(Array, eltype(x))
-        for t in T
-            if x in t
-                res += 1
-            end
-        end
-    elseif isa(Array, eltype(x))
-        for t in T
-            if x ⊆ t
-                res += 1
-            end
+    for t in T
+        if x ⊆ t
+            res += 1
         end
     end
     return res
 end
+
+
+function σ(x::String, T)
+    res = 0
+    for t in T
+        if x in t
+            res += 1
+        end
+    end
+    return res
+end
+
 
 # Support of rule x -> y, for which x ∩ y = ∅
 function supp(x, y, T)
