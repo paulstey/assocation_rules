@@ -51,9 +51,70 @@ function wrap_line(v, maxchar)
     return out
 end
 
-# v = ["this", "is", "my", "vector", "which", "contains", "a", "number", "of", "variable-length", "terms", "such", "as", "these."]
-# println(wrap_line(v, 25))
-#
+v1 = ["this here", "is", "my", "vector", "and", "this", "vector", "contains", "quite", "a", "number", "of", "variable-length", "terms", "such", "as", "these."]
+v2 = ["a", "number", "of", "variable-length", "terms", "such", "as", "these."]
+w1 = wrap_line(v1, 25)
+w2 = wrap_line(v2, 25)
+println(w1)
+
+
+# Given two vectors of split lines (p and q), where the vectors
+# are of the same length, this function prints out the lines and
+# aligns them appropriately.
+function print_equal_length(p_lines, q_lines, colwidth, i = 1, j = 1)
+    np = length(p_lines)
+
+    while i ≤ np
+        if i ≠ np
+            print(rpad(p_lines[i], colwidth, " "))
+            println("    ", q_lines[j])
+        else
+            print(rpad(p_lines[i], colwidth, " "))
+            print(" => ", q_lines[j])
+        end
+        i += 1
+        j += 1
+    end
+end
+
+
+function print_wrapped_lines(p_line, q_line, colwidth)
+    p_lines = split(p_line, '\n', keep = true)
+    q_lines = split(q_line, '\n', keep = true)
+    np = length(p_lines)
+    nq = length(q_lines)
+
+    if np == nq
+        print_equal_length(p_lines, q_lines, colwidth)
+    elseif np > nq
+        i = 1
+        ndiff = np - nq
+
+        while ndiff > 0
+            println(rpad(p_lines[i], colwidth, " "))
+            ndiff -= 1
+            i += 1
+        end
+        print_equal_length(p_lines, q_lines, colwidth, i, 1)
+    elseif np < nq
+        j = 1
+        ndiff = nq - np
+
+        while ndiff > 0
+            println(lpad("", colwidth+4, " "), rpad(p_lines[j], colwidth, " "))
+            ndiff -= 1
+            j += 1
+        end
+        print_equal_length(p_lines, q_lines, colwidth, 1, j)
+    end
+end
+
+print_wrapped_lines(w2, w1, 30)
+
+
+
+
+
 
 
 function prettyprint_rulestats(r::Rule, plen, qlen, colwidth)
