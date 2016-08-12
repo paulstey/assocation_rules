@@ -47,15 +47,14 @@ function wrap_line(v, maxchar)
     elseif n ≤ maxchar
         out = res
     end
-
     return out
 end
 
-v1 = ["this here", "is", "my", "vector", "and", "this", "vector", "contains", "quite", "a", "number", "of", "variable-length", "terms", "such", "as", "these."]
-v2 = ["a", "number", "of", "variable-length", "terms", "such", "as", "these."]
-w1 = wrap_line(v1, 25)
-w2 = wrap_line(v2, 25)
-println(w1)
+# v1 = ["this here", "is", "my", "vector", "and", "this", "vector", "contains", "quite", "a", "number", "of", "variable-length", "terms", "such", "as", "these."]
+# v2 = ["a", "number", "of", "variable-length", "terms", "such", "as", "these."]
+# w1 = wrap_line(v1, 25)
+# w2 = wrap_line(v2, 25)
+# println(w1)
 
 
 # Given two vectors of split lines (p and q), where the vectors
@@ -70,7 +69,7 @@ function print_equal_length(p_lines, q_lines, colwidth, i = 1, j = 1)
             println("    ", q_lines[j])
         else
             print(rpad(p_lines[i], colwidth, " "))
-            print(" => ", q_lines[j])
+            print(" => ", rpad(q_lines[j], colwidth+1, " "))
         end
         i += 1
         j += 1
@@ -99,9 +98,10 @@ function print_wrapped_lines(p_line, q_line, colwidth)
     elseif np < nq
         j = 1
         ndiff = nq - np
+        padding = lpad("", colwidth+4, " ")
 
         while ndiff > 0
-            println(lpad("", colwidth+4, " "), rpad(p_lines[j], colwidth, " "))
+            println(padding, rpad(q_lines[j], colwidth, " "))
             ndiff -= 1
             j += 1
         end
@@ -109,7 +109,7 @@ function print_wrapped_lines(p_line, q_line, colwidth)
     end
 end
 
-print_wrapped_lines(w2, w1, 30)
+# print_wrapped_lines(wrap_line(v1, m), wrap_line(v2, m), 20)
 
 
 
@@ -122,18 +122,13 @@ function prettyprint_rulestats(r::Rule, plen, qlen, colwidth)
     q = wrap_line(r.q, colwidth)
     fmt = "%0.4f"
 
-    # if plen < colwidth
-        arrow = " => "
-    # else
-    #     arrow = lpad(" => ", colwidth, " ")
-    # end
-
-    println(rpad(p, plen, " "), arrow, rpad(q, qlen, " "), " $(sprintf1(fmt, r.supp)) $(sprintf1(fmt, r.conf)) $(sprintf1(fmt, r.lift))", )
+    print_wrapped_lines(p, q, colwidth)
+    println("$(sprintf1(fmt, r.supp)) $(sprintf1(fmt, r.conf)) $(sprintf1(fmt, r.lift))", )
 end
 
-# prettyprint_rulestats(rules[1], 10, 10)
+# prettyprint_rulestats(rules[1], 10, 10, 30)
 
-function show_rulestats(rs::Vector{Rule}, colwidth = 25)
+function show_rulestats(rs::Vector{Rule}, colwidth = 30)
     n = length(rs)
 
     maxlen_p = maximum(map(x -> length(wrap_line(x.p, colwidth)), rs))
@@ -146,8 +141,9 @@ function show_rulestats(rs::Vector{Rule}, colwidth = 25)
 
     println(rpad("lhs", maxlen_p, " "), "    ", rpad("rhs", maxlen_q, " "), " supp.  conf.  lift")
     for i = 1:n
+        # println(i)
         prettyprint_rulestats(rs[i], maxlen_p, maxlen_q, colwidth)
     end
 end
 
-# show_rulestats(rules)
+show_rulestats(rules)
