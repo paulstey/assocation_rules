@@ -128,7 +128,7 @@ end
 
 # prettyprint_rulestats(rules[1], 10, 10, 30)
 
-function show_rulestats(rs::Vector{Rule}, colwidth = 30)
+function display(rs::Vector{Rule}, colwidth = 30)
     n = length(rs)
 
     maxlen_p = maximum(map(x -> length(wrap_line(x.p, colwidth)), rs))
@@ -141,9 +141,8 @@ function show_rulestats(rs::Vector{Rule}, colwidth = 30)
 
     println(rpad("lhs", maxlen_p, " "), "    ", rpad("rhs", maxlen_q, " "), " supp.  conf.  lift")
     for i = 1:n
-        # println(i)
         prettyprint_rulestats(rs[i], maxlen_p, maxlen_q, colwidth)
     end
 end
 
-show_rulestats(rules)
+# display(rules)

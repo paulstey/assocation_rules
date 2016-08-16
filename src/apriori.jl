@@ -129,9 +129,9 @@ end
 # R
 function ap_genrules!(fk, Hm, T, minsupp, minconf, R)
     k = length(fk)
-    # if isempty(Hm)
-    #     return nothing
-    # end
+    if isempty(Hm)
+        return nothing
+    end
     m = length(Hm[1])
 
     if k > m+1
