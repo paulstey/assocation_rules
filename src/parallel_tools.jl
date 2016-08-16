@@ -72,3 +72,78 @@ end
 
 d1 = count_values(v[1:50_000])
 d2 = count_values(v[50_001:100_000])
+
+
+
+using Base.Threads
+
+function test_thread_conditional(n)
+    out = zeros(Int, n)
+    @threads for i = 1:n
+        if i < n/2
+            out[i] = i^2
+        else
+            break
+        end
+    end
+    out
+end
+
+test_thread_conditional(10_000_000)
+
+
+
+
+function par_apriori_gen{M}(x::Array{Array{M, 1}, 1})
+    n = length(x)
+    # if n < 1
+    #     return Array{Array{M, 1}, 1}(0)
+    # end
+    m = length(x[1]) - 1
+    p = round(Int, (n^2 - n)/2)
+    C = Array{Array{M, 1}, 1}(p)
+
+    @threads for i = 1:n
+        for j = (i+1):n
+            sort!(x[i])
+            sort!(x[j])
+            keep_candidate = true
+
+            # length k candidate itemsets are created by merging pairs of
+            # length k - 1 itemsets if their first k - 2 elements identical
+            for l in 1:m
+
+                # see if all k - 1 elements are identical
+                if x[i][l] != x[j][l] || x[i][m+1] == x[j][m+1]
+                    keep_candidate = false
+                    break
+                end
+            end
+            if keep_candidate
+                c::Array{M, 1} = vcat(x[i], x[j][end])
+                C[i*j] = sort!(c)
+            end
+        end
+    end
+    C_cln = Array{Array{M, 1}}(0)
+
+    for i = 1:p
+        if isdefined(C, i)
+            push!(C_cln, C[i])
+        end
+    end
+
+    return C_cln              # vector of candidate itemsets: C_{k}
+end
+
+
+
+function h(n)
+    res = Array{Int, 1}()
+    for i = 1:n
+        for j = (i+1):n
+            push!(res, i*j)
+        end
+    end
+    res
+end

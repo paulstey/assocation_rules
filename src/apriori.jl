@@ -57,7 +57,7 @@ function apriori_gen{M}(x::Array{Array{M, 1}, 1})
     return C              # vector of candidate itemsets: C_{k}
 end
 
-# v = [rand([1, 2, 3, 4, 5], 10) for x = 1:1000];
+# v = [rand([1, 2, 3, 4, 5, 6, 7, 8], 5) for x = 1:10000];
 # @code_warntype apriori_gen(v)
 # @time apriori_gen(v);
 #
@@ -230,7 +230,7 @@ end
 # fr = freq_itemsets(v, 0.2)
 # rules = gen_rules(fr, v, 0.1, 0.8, false)
 #
-# show_rulestats(rules, v)
+# display(rules, v)
 
 # rs = Vector{Rule}(0)
 # a = Rule([1], [2])

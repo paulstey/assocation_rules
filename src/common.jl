@@ -5,7 +5,7 @@ import Base.unique
 
 type Rule
     p::Array            # antecedent (rhs)
-    q::Array           # consequent (lhs)
+    q::Array            # consequent (lhs)
     supp::Float64
     conf::Float64
     lift::Float64

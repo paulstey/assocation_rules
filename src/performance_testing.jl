@@ -46,6 +46,6 @@ complete_cases!(d)
 
 dmat = convert(Array, d)
 transactions = make_transactions(dmat)
-@time rules = apriori(transactions[1:100], 0.40, 0.01)
+@time rules = apriori(transactions[1:1000], 0.60, 0.8);
 
 show_rulestats(rules)
