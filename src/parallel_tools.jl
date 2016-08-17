@@ -33,6 +33,24 @@ function gen_ranges(n, nchnks)
 end
 
 
+
+function gen_ranges(first_idx, n, nchnks)
+    num = n - first_idx + 1
+    step_size = round(Int64, (ceil(num/nchnks)))
+
+    last_idx = 1 + step_size
+    range_vec = Array{Range, 1}(nchnks)
+    for i = 1:nchnks
+        range_vec[i] = range(first_idx, step_size)
+        first_idx += step_size
+        last_chk = first_idx + step_size
+        step_size = last_chk > n ? (n - first_idx + 1) : step_size
+    end
+    return range_vec
+end
+
+
+
 # Given a vector of vectors, this function returns a
 # Dict with counts representing the frequency of each
 # individual value.
@@ -80,60 +98,67 @@ using Base.Threads
 function test_thread_conditional(n)
     out = zeros(Int, n)
     @threads for i = 1:n
-        if i < n/2
-            out[i] = i^2
-        else
-            break
+        for j = 1:n
+            if j < n/2
+                out[j] = j^2
+            else
+                break
+            end
         end
     end
-    out
+    return out
 end
 
-test_thread_conditional(10_000_000)
+test_thread_conditional(100)
 
 
+function init_nested_vectors(xtype, num)
+    inner = Array{xtype, 1}(0)
+    outer = Array{Array, 1}(0)
 
+    for i = 1:num
+        push!(outer, copy(inner))
+    end
+    outer
+end
 
-function par_apriori_gen{M}(x::Array{Array{M, 1}, 1})
+init_nested_vectors(Array, 4)
+
+function par_apriori_gen{M}(x::Array{Array{M, 1}, 1}, num_threads)
     n = length(x)
     # if n < 1
     #     return Array{Array{M, 1}, 1}(0)
     # end
     m = length(x[1]) - 1
-    p = round(Int, (n^2 - n)/2)
-    C = Array{Array{M, 1}, 1}(p)
+    C_arr = init_nested_vectors(Array, num_threads)
 
-    @threads for i = 1:n
-        for j = (i+1):n
-            sort!(x[i])
-            sort!(x[j])
-            keep_candidate = true
+    for i = 1:n
+        @threads for t = 1:num_threads
+        range_vec = gen_ranges(i+1, n, num_threads)
+            for j in range_vec[t]
+                sort!(x[i])
+                sort!(x[j])
+                keep_candidate = true
 
-            # length k candidate itemsets are created by merging pairs of
-            # length k - 1 itemsets if their first k - 2 elements identical
-            for l in 1:m
+                # length k candidate itemsets are created by merging pairs of
+                # length k - 1 itemsets if their first k - 2 elements identical
+                for l in 1:m
 
-                # see if all k - 1 elements are identical
-                if x[i][l] != x[j][l] || x[i][m+1] == x[j][m+1]
-                    keep_candidate = false
-                    break
+                    # see if all k - 1 elements are identical
+                    if x[i][l] != x[j][l] || x[i][m+1] == x[j][m+1]
+                        keep_candidate = false
+                        break
+                    end
+                end
+                if keep_candidate
+                    c::Array{M, 1} = vcat(x[i], x[j][end])
+                    push!(C_arr[t], sort!(c))
                 end
             end
-            if keep_candidate
-                c::Array{M, 1} = vcat(x[i], x[j][end])
-                C[i*j] = sort!(c)
-            end
         end
     end
-    C_cln = Array{Array{M, 1}}(0)
-
-    for i = 1:p
-        if isdefined(C, i)
-            push!(C_cln, C[i])
-        end
-    end
-
-    return C_cln              # vector of candidate itemsets: C_{k}
+    C::Array{Array{M, 1}, 1} = reduce(vcat, C_arr)
+    return C              # vector of candidate itemsets: C_{k}
 end
 
 

@@ -48,4 +48,4 @@ dmat = convert(Array, d)
 transactions = make_transactions(dmat)
 @time rules = apriori(transactions[1:1000], 0.60, 0.8);
 
-show_rulestats(rules)
+display(rules)
