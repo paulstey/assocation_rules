@@ -57,7 +57,7 @@ function apriori_gen{M}(x::Array{Array{M, 1}, 1})
     return C              # vector of candidate itemsets: C_{k}
 end
 
-# v = [rand([1, 2, 3, 4, 5, 6, 7, 8], 5) for x = 1:10000];
+# v = [sample(1:10, 5, replace = false) for x = 1:10000];
 # @code_warntype apriori_gen(v)
 # @time apriori_gen(v);
 

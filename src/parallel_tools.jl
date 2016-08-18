@@ -86,32 +86,6 @@ end
 #
 # d1 = count_values(v[1:50_000])
 # d2 = count_values(v[50_001:100_000])
-#
-
-
-
-function f1(n)
-    out = zeros(Int, n)
-    @threads for i = 1:n
-        for j = 1:n
-            out[j] = j*i
-        end
-    end
-    return out
-end
-
-function f2(n)
-    out = zeros(Int, n)
-    for i = 1:n
-        @threads for j = 1:n
-            out[j] = j*i
-        end
-    end
-    return out
-end
-
-@code_warntype f1(100)
-@code_warntype f2(100)
 
 
 
@@ -125,7 +99,7 @@ function init_nested_vectors(typ, num, num_inner_elem = 0)
     outer
 end
 
-init_nested_vectors(Array, 4)
+# init_nested_vectors(Array, 4)
 
 
 # This version of the function seems to work, but because of
@@ -139,10 +113,11 @@ function par_apriori_gen{M}(x::Array{Array{M, 1}, 1}, num_threads)
     C_arr = init_nested_vectors(Array, num_threads)
 
     for i = 1:n
-        @threads for t = 1:num_threads
+        sort!(x[i])
         range_vec = gen_ranges(i+1, n, num_threads)
+
+        @threads for t = 1:num_threads
             for j in range_vec[t]
-                sort!(x[i])
                 sort!(x[j])
                 keep_candidate = true
 
@@ -168,19 +143,55 @@ function par_apriori_gen{M}(x::Array{Array{M, 1}, 1}, num_threads)
 end
 
 
-
-
-
 function par_apriori_gen2{M}(x::Array{Array{M, 1}, 1}, num_threads)
     n = length(x)
 
     m = length(x[1]) - 1
-    C = Array{Array{M, 1}, 1}(0)
+    C_arr = Array{Array{M, 1}, 1}(0)
 
     for i = 1:n
-        @threads for j = (i+1):n
+        sort!(x[i])
+        range_vec = gen_ranges(i+1, n, num_threads)
 
-            sort!(x[i])
+        @parallel for t in 1:num_threads
+            for j in range_vec[t]
+
+                sort!(x[j])
+                keep_candidate = true
+
+                # length k candidate itemsets are created by merging pairs of
+                # length k - 1 itemsets if their first k - 2 elements identical
+                for l in 1:m
+
+                    # see if all k - 1 elements are identical
+                    if x[i][l] != x[j][l] || x[i][m+1] == x[j][m+1]
+                        keep_candidate = false
+                        break
+                    end
+                end
+                if keep_candidate
+                    c::Array{M, 1} = vcat(x[i], x[j][end])
+                    push!(C_arr[t], sort!(c))
+                end
+            end
+        end
+    end
+    return C_arr              # vector of candidate itemsets: C_{k}
+end
+
+# v = [sample(1:20, 5, replace = false) for x = 1:10_000];
+
+
+
+
+function _par_apriori_gen{M}(x::Array{Array{M, 1}, 1}, num_threads, i, range_vec)
+    n = length(x)
+    m = length(x[1]) - 1
+    C_arr = init_nested_vectors(Array, num_threads)
+    sort!(x[i])
+
+    @threads for t = 1:num_threads
+        for j in range_vec[t]
             sort!(x[j])
             keep_candidate = true
 
@@ -196,54 +207,11 @@ function par_apriori_gen2{M}(x::Array{Array{M, 1}, 1}, num_threads)
             end
             if keep_candidate
                 c::Array{M, 1} = vcat(x[i], x[j][end])
-                push!(C, sort!(c))
+                push!(C_arr[t], sort!(c))
             end
         end
     end
-    return C              # vector of candidate itemsets: C_{k}
-end
 
-v = [rand([1, 2, 3, 4, 5, 6, 7, 8], 5) for x = 1:10_000];
-
-
-
-
-function _par_apriori_gen{M}(x::Array{Array{M, 1}, 1}, num_threads, i)
-    n = length(x)
-    m = length(x[1]) - 1
-    C_arr = init_nested_vectors(Array, num_threads)
-
-    # for i = 1:n
-        # i::Int64 = 1
-    # while true
-        @threads for t = 1:num_threads
-        range_vec = gen_ranges(i+1, n, num_threads)
-            for j in range_vec[t]
-                sort!(x[i])
-                sort!(x[j])
-                keep_candidate = true
-
-                # length k candidate itemsets are created by merging pairs of
-                # length k - 1 itemsets if their first k - 2 elements identical
-                for l in 1:m
-
-                    # see if all k - 1 elements are identical
-                    if x[i][l] != x[j][l] || x[i][m+1] == x[j][m+1]
-                        keep_candidate = false
-                        break
-                    end
-                end
-                if keep_candidate
-                    c::Array{M, 1} = vcat(x[i], x[j][end])
-                    push!(C_arr[t], sort!(c))
-                end
-            end
-        end
-    #     i += 1
-    #     if i > n
-    #         break
-    #     end
-    # end
     C::Array{Array{M, 1}, 1} = reduce(vcat, C_arr)
     return C              # vector of candidate itemsets: C_{k}
 end
@@ -253,7 +221,8 @@ end
 function par_apriori_gen3{M}(x::Array{Array{M, 1}, 1}, num_threads, n)
     C_arr = Array{Array{Array{M, 1}, 1}}(n)
     for i = 1:n
-        C_arr[i] = _par_apriori_gen(x, num_threads, i)
+        range_vec = gen_ranges(i+1, n, num_threads)
+        C_arr[i] = _par_apriori_gen(x, num_threads, i, range_vec)
     end
     res = reduce(vcat, C_arr)
 end
