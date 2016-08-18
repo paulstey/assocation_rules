@@ -1,7 +1,7 @@
 using Base.Threads
 
 # v = [[1, 2, 3], [1, 2, 3], [1, 2, 3],  [1, 2, 5], [1, 3, 4], [1, 4, 5], [2, 3, 4], [2, 3, 4], [2, 3, 5], [3, 4, 5]]
-# v = [rand([1, 2, 3, 4, 5], 10) for x = 1:1_000_000];
+# v = [sample(1:20, 5) for x = 1:10_000];
 
 
 
@@ -31,7 +31,6 @@ function gen_ranges(n, nchnks)
     end
     return range_vec
 end
-
 
 
 function gen_ranges(first_idx, n, nchnks)

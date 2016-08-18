@@ -1,4 +1,4 @@
-# AssociationRule.jl
+# AssociationRules.jl
 
 using StatsBase
 using Formatting
