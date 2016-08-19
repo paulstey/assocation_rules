@@ -1,4 +1,4 @@
-# Find k-freq-itemset in given transactions of items queried together
+# Find k-frequent itemset in given transactions of items
 
 
 # Given a vector of transactions (each is a vector), this
@@ -32,8 +32,9 @@ function apriori_gen{M}(x::Array{Array{M, 1}, 1})
     C = Array{Array{M, 1}, 1}(0)
 
     for i = 1:n
+        sort!(x[i])
+        
         for j = (i+1):n
-            sort!(x[i])
             sort!(x[j])
             keep_candidate = true
 
@@ -56,7 +57,7 @@ function apriori_gen{M}(x::Array{Array{M, 1}, 1})
     return C              # vector of candidate itemsets: C_{k}
 end
 
-# v = [sample(1:10, 5, replace = false) for x = 1:10000];
+# v = [sample(1:10, 5, replace = false) for x = 1:100];
 # @code_warntype apriori_gen(v)
 # @time apriori_gen(v);
 
