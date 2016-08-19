@@ -5,7 +5,6 @@
 # function returns a single array with all the unique items.
 
 function get_unique_items{M}(T::Array{Array{M, 1}, 1})
-    I = Array{M, 1}(0)
     dict = Dict{M, Int}()
 
     # loop over transactions, store each item in I
