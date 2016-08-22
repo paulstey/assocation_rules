@@ -1,5 +1,6 @@
 
 import Base.display
+import Base.isempty
 
 type Sequence
     sid::Int64                          # sequence ID
@@ -12,23 +13,26 @@ type IDList
     item::String
     sids::Array{Int, 1}
     eids::Array{Int, 1}
-    pattern::Symbol                         # either `:sequence` or `:event` pattern
+    pattern::Symbol                     # either `:sequence` or `:event` pattern
+    supp::Int
 end
 
+isempty(x::IDList) = isempty(x.sids)
 
-function first_idlist(seqs::Array{Sequence, 1}, id)
+function first_idlist(seqs::Array{Sequence, 1}, item)
     sids = Array{Int, 1}(0)
     eids = Array{Int, 1}(0)
 
     for s in seqs
         for j = 1:length(s.eids)
-            if id ∈ s.items[j]
+            if item ∈ s.items[j]
                 push!(sids, s.sid)
                 push!(eids, s.eids[j])
             end
         end
     end
-    return IDList(id, sids, eids, :event)
+    support = length(unique(sids))
+    return IDList(item, sids, eids, :event, support)
 end
 
 
@@ -58,7 +62,8 @@ function equality_join(l1, l2)
             end
         end
     end
-    return IDList(string(l1.item, l2.item), sids, eids, :event)
+    support = length(unique(sids))
+    return IDList(string(l1.item, l2.item), sids, eids, :event, support)
 end
 
 
@@ -69,6 +74,8 @@ function already_seen(sid1, eid2, tm_sids, tm_eids)
         res = false
     elseif find(tm_sids .== sid1) == find(tm_eids .== eid2)
         res = true
+    else
+        res = false
     end
     return res
 end
@@ -92,6 +99,7 @@ function merge_idlists!(l1::IDList, l2::IDList, eq_sids, eq_eids, tm_sids, tm_ei
     end
 end
 
+
 function merge_idlists(l1::IDList, l2::IDList)
     eq_sids = Array{Int, 1}(0)
     eq_eids = Array{Int, 1}(0)
@@ -100,7 +108,11 @@ function merge_idlists(l1::IDList, l2::IDList)
 
     merge_idlists!(l1, l2, eq_sids, eq_eids, tm_sids, tm_eids)
 
-    merged_idlists = (IDList(string(l1.item, l2.item), eq_sids, eq_eids, :event), IDList(string(l1.item, " => ", l2.item), tm_sids, tm_eids, :sequence))
+    # calculate support
+    supp1 = length(unique(eq_sids))
+    supp2 = length(unique(tm_sids))
+
+    merged_idlists = [IDList(string(l1.item, l2.item), eq_sids, eq_eids, :event, supp1), IDList(string(l1.item, " => ", l2.item), tm_sids, tm_eids, :sequence, supp2)]
     return merged_idlists
 end
 
@@ -118,11 +130,49 @@ s2 = Sequence(
 
 
 seq_arr = [s1, s2]
-first_idlist(seq_arr, "a")
-
-
-
+alist = first_idlist(seq_arr, "a")
 clist = first_idlist(seq_arr, "c")
 dlist = first_idlist(seq_arr, "d")
 
 equality_join(clist, dlist)
+
+
+
+merge_idlists(clist, dlist)
+
+function unique_items(s::Sequence)
+    d = Dict{String, Int64}()
+    for i = 1:length(s.items)
+        for k in s.items[i]
+            d[k] = get(d, k, 0) + 1
+        end
+    end
+    return collect(keys(d))
+end
+
+
+
+
+function spade(seqs::Array{Sequence, 1})
+    F = Array{Array{IDList, 1}, 1}(0)
+    f1 = Array{IDList, 1}(0)
+    items = Array{String, 1}(0)
+
+    for i = 1:length(seqs)
+        append!(items, unique_items(seqs[i]))
+    end
+    uniq_items = unique(items)
+
+    for itm in uniq_items
+        push!(f1, first_idlist(seqs, itm))
+    end
+    n = length(f1)
+    for i = 1:n
+        for j = (i+1):n
+            push!(F, merge_idlists(f1[i], f1[j]))
+        end
+    end
+    F
+end
+
+spade(seq_arr)
