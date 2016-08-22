@@ -12,7 +12,7 @@ type IDList
     item::String
     sids::Array{Int, 1}
     eids::Array{Int, 1}
-    typ::Symbol                         # either `:sequence` or `:event` pattern
+    pattern::Symbol                         # either `:sequence` or `:event` pattern
 end
 
 
@@ -60,6 +60,50 @@ function equality_join(l1, l2)
     end
     return IDList(string(l1.item, l2.item), sids, eids, :event)
 end
+
+
+function already_seen(sid1, eid2, tm_sids, tm_eids)
+    if !in(sid1, tm_sids)
+        res = false
+    elseif !in(eid2, tm_eids)
+        res = false
+    elseif find(tm_sids .== sid1) == find(tm_eids .== eid2)
+        res = true
+    end
+    return res
+end
+
+
+function merge_idlists!(l1::IDList, l2::IDList, eq_sids, eq_eids, tm_sids, tm_eids)
+    for i = 1:length(l1.sids)
+        for j = 1:length(l2.sids)
+            if l1.sids[i] == l2.sids[j]
+                # equality join
+                if l1.eids[i] == l2.eids[j]
+                    push!(eq_sids, l1.sids[i])
+                    push!(eq_eids, l1.eids[i])
+                # temporal join
+                elseif l1.eids[i] < l2.eids[j] && !already_seen(l1.sids[i], l2.eids[j], tm_sids, tm_eids)
+                    push!(tm_sids, l1.sids[i])
+                    push!(tm_eids, l2.eids[j])
+                end
+            end
+        end
+    end
+end
+
+function merge_idlists(l1::IDList, l2::IDList)
+    eq_sids = Array{Int, 1}(0)
+    eq_eids = Array{Int, 1}(0)
+    tm_sids = Array{Int, 1}(0)
+    tm_eids = Array{Int, 1}(0)
+
+    merge_idlists!(l1, l2, eq_sids, eq_eids, tm_sids, tm_eids)
+
+    merged_idlists = (IDList(string(l1.item, l2.item), eq_sids, eq_eids, :event), IDList(string(l1.item, " => ", l2.item), tm_sids, tm_eids, :sequence))
+    return merged_idlists
+end
+
 
 
 s1 = Sequence(
