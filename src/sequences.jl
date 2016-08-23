@@ -103,7 +103,7 @@ function already_seen(sid1, eid2, tm_sids, tm_eids)
 end
 
 
-function merge_idlists!(l1::IDList, l2::IDList, eq_sids, eq_eids, tm_sids, tm_eids)
+function first_merge!(l1::IDList, l2::IDList, eq_sids, eq_eids, tm_sids, tm_eids)
     for i = 1:length(l1.sids)
         for j = 1:length(l2.sids)
             if l1.sids[i] == l2.sids[j]
@@ -122,19 +122,32 @@ function merge_idlists!(l1::IDList, l2::IDList, eq_sids, eq_eids, tm_sids, tm_ei
 end
 
 
-function merge_idlists(l1::IDList, l2::IDList)
+function first_merge(l1::IDList, l2::IDList)
     eq_sids = Array{Int, 1}(0)
     eq_eids = Array{Int, 1}(0)
     tm_sids = Array{Int, 1}(0)
     tm_eids = Array{Int, 1}(0)
 
-    merge_idlists!(l1, l2, eq_sids, eq_eids, tm_sids, tm_eids)
+    first_merge!(l1, l2, eq_sids, eq_eids, tm_sids, tm_eids)
 
     # calculate support
     supp1 = length(unique(eq_sids))
     supp2 = length(unique(tm_sids))
 
-    merged_idlists = [IDList(string(l1.item, l2.item), eq_sids, eq_eids, :event, supp1), IDList(string(l1.item, " => ", l2.item), tm_sids, tm_eids, :sequence, supp2)]
+    event_idlist = IDList(string(l1.item, l2.item), eq_sids, eq_eids, :event, supp1)
+    seq_idlist = IDList(string(l1.item, " => ", l2.item), tm_sids, tm_eids, :sequence, supp2)
+
+    merged_idlists = Array{IDList, 1}(0)
+    if !isempty(event_idlist)
+        push!(merged_idlists, event_idlist)
+    end
+    if !isempty(seq_idlist)
+        push!(merged_idlists, seq_idlist)
+    end
+    if isempty(merged_idlists)
+        return nothing
+    end
+
     return merged_idlists
 end
 
@@ -161,8 +174,8 @@ equality_join(alist, dlist)
 
 
 
-merge_idlists(clist, dlist)
-merge_idlists(alist, dlist)
+first_merge(clist, dlist)
+first_merge(alist, dlist)
 
 
 function unique_items(s::Sequence)
@@ -176,7 +189,7 @@ function unique_items(s::Sequence)
 end
 
 
-function _spade(f, F)
+function _spade!(f, F)
     if allempty(f)
         return nothing
     else
@@ -184,16 +197,16 @@ function _spade(f, F)
         f_tmp = Array{Array{IDList, 1}, 1}(0)
         for i = 1:n
             for j = (i+1):n
-                push!(f_tmp, merge_idlists(f[i], f[j]))
+                push!(f_tmp, first_merge(f[i], f[j]))
             end
         end
         fk = reduce(vcat, f_tmp)
         push!(F, fk)
-        _spade(fk, F)
+        _spade!(fk, F)
     end
 end
 
-
+# this is broken now...
 function spade(seqs::Array{Sequence, 1})
     F = Array{Array{IDList, 1}, 1}(0)
     f1 = Array{IDList, 1}(0)
@@ -208,9 +221,9 @@ function spade(seqs::Array{Sequence, 1})
         push!(f1, first_idlist(seqs, itm))
     end
     push!(F, f1)
-    _spade(f1, F)
+    _spade!(f1, F)
 
-    reduce(vcat, F)
+    return F
 end
 
 spade(seq_arr)
