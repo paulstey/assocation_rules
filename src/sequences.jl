@@ -19,6 +19,17 @@ end
 
 isempty(x::IDList) = isempty(x.sids)
 
+function allempty(x::Array{IDList, 1})
+    res = true
+    for i = 1:length(x)
+        if !isempty(x[i])
+            res = false
+        end
+    end
+    return res
+end
+
+
 function first_idlist(seqs::Array{Sequence, 1}, item)
     sids = Array{Int, 1}(0)
     eids = Array{Int, 1}(0)
@@ -36,15 +47,27 @@ function first_idlist(seqs::Array{Sequence, 1}, item)
 end
 
 
-function display(x::IDList)
-    last = x.sids[end]
-    nchar = 2 + length(string(last))
+# function display(x::IDList)
+#     if isempty(x)
+#         println("$(x.item) has support 0")
+#     else
+#         last = x.sids[end]
+#         nchar = 2 + length(string(last))
+#
+#         println("$(x.item)")
+#         for i = 1:length(x.sids)
+#             println(rpad(x.sids[i], nchar, " "), x.eids[i])
+#         end
+#     end
+# end
 
-    println("$(x.item)")
-    for i = 1:length(x.sids)
-        println(rpad(x.sids[i], nchar, " "), x.eids[i])
-    end
-end
+# function display(x::Array{IDList,1})
+#     for i = 1:length(x)
+#         display(x[i])
+#         println("\n")
+#     end
+# end
+#
 
 
 # l1 and l2 are IDList objects
@@ -68,14 +91,13 @@ end
 
 
 function already_seen(sid1, eid2, tm_sids, tm_eids)
-    if !in(sid1, tm_sids)
-        res = false
-    elseif !in(eid2, tm_eids)
-        res = false
-    elseif find(tm_sids .== sid1) == find(tm_eids .== eid2)
-        res = true
-    else
-        res = false
+    res = false
+    n = length(tm_sids)
+    for i = 1:n, j = 1:n
+        if tm_sids[i] == sid1 && tm_eids[j] == eid2
+            res = true
+            break
+        end
     end
     return res
 end
@@ -135,10 +157,13 @@ clist = first_idlist(seq_arr, "c")
 dlist = first_idlist(seq_arr, "d")
 
 equality_join(clist, dlist)
+equality_join(alist, dlist)
 
 
 
 merge_idlists(clist, dlist)
+merge_idlists(alist, dlist)
+
 
 function unique_items(s::Sequence)
     d = Dict{String, Int64}()
@@ -151,6 +176,22 @@ function unique_items(s::Sequence)
 end
 
 
+function _spade(f, F)
+    if allempty(f)
+        return nothing
+    else
+        n = length(f)
+        f_tmp = Array{Array{IDList, 1}, 1}(0)
+        for i = 1:n
+            for j = (i+1):n
+                push!(f_tmp, merge_idlists(f[i], f[j]))
+            end
+        end
+        fk = reduce(vcat, f_tmp)
+        push!(F, fk)
+        _spade(fk, F)
+    end
+end
 
 
 function spade(seqs::Array{Sequence, 1})
@@ -166,13 +207,10 @@ function spade(seqs::Array{Sequence, 1})
     for itm in uniq_items
         push!(f1, first_idlist(seqs, itm))
     end
-    n = length(f1)
-    for i = 1:n
-        for j = (i+1):n
-            push!(F, merge_idlists(f1[i], f1[j]))
-        end
-    end
-    F
+    push!(F, f1)
+    _spade(f1, F)
+
+    reduce(vcat, F)
 end
 
 spade(seq_arr)
