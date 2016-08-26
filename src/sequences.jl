@@ -13,7 +13,7 @@ type IDList
     item::String
     sids::Array{Int, 1}
     eids::Array{Int, 1}
-    pattern::Symbol                     # either `:sequence` or `:event` pattern
+    pattern::Symbol                     # either `:initial`, `:sequence` or `:event` pattern
     supp::Int
 end
 
@@ -67,7 +67,7 @@ end
 #         println("\n")
 #     end
 # end
-#
+
 
 
 # l1 and l2 are IDList objects
@@ -76,7 +76,6 @@ function equality_join(l1, l2)
     eids = Array{Int, 1}(0)
     n = length(l1.sids)
     m = length(l2.sids)
-
     for i = 1:n
         for j = 1:m
             if l1.sids[i] == l2.sids[j] && l1.eids[i] == l2.eids[j]
@@ -86,8 +85,36 @@ function equality_join(l1, l2)
         end
     end
     support = length(unique(sids))
-    return IDList(string(l1.item, l2.item), sids, eids, :event, support)
+    return IDList(string(l1.item, ",", l2.item), sids, eids, :event, support)
 end
+
+
+function temporal_join(l1, l2, both_sequences = false)
+    sids = Array{Int, 1}(0)
+    eids = Array{Int, 1}(0)
+    n = length(l1.sids)
+    m = length(l2.sids)
+    if both_sequences
+        for i = 1:n
+            for j = 1:m
+                if l1.sids[i] == l2.sids[j] && l1.eids[i] < l2.eids[j] && !already_seen(l1.sids[i], l2.eids[j], tm_sids, tm_eids)
+                    push!(sids, l1.sids[i])
+                    push!(eids, l1.eids[i])
+                end
+            end
+        end
+    elseif !both_sequences
+        if l1.item == l2.item
+            error("id-list 1 and id-list 2 are the same")
+        else
+
+
+
+
+    support = length(unique(sids))
+    return IDList(string(l1.item, ",", l2.item), sids, eids, :sequence, support)
+end
+
 
 
 function already_seen(sid1, eid2, tm_sids, tm_eids)
@@ -134,7 +161,7 @@ function first_merge(l1::IDList, l2::IDList)
     supp1 = length(unique(eq_sids))
     supp2 = length(unique(tm_sids))
 
-    event_idlist = IDList(string(l1.item, l2.item), eq_sids, eq_eids, :event, supp1)
+    event_idlist = IDList(string(l1.item, ",", l2.item), eq_sids, eq_eids, :event, supp1)
     seq_idlist = IDList(string(l1.item, " => ", l2.item), tm_sids, tm_eids, :sequence, supp2)
 
     merged_idlists = Array{IDList, 1}(0)
@@ -150,6 +177,36 @@ function first_merge(l1::IDList, l2::IDList)
 
     return merged_idlists
 end
+
+# Behave like Python's str.rfind() method, gets
+# the index of the last instance of `char` in the
+# string `s`. Return -1 if `char` is not found.
+function rfind(s, char)
+    found_indcs = find(x -> x == char, collect(s))
+    if isempty(found_indcs)
+        last_idx = -1
+    else
+        last_idx = maximum(found_indcs)
+    end
+    return last_idx
+end
+
+
+function
+
+
+
+function merge_idlists(l1, l2)
+    if l1.pattern == :event && l2.pattern == :event
+        merged_idlists = equality_join(l1, l2)
+    elseif l1.pattern == :event && l2.pattern == :sequence
+        merged_idlists = temporal_join(l1, l2)
+    elseif l1.pattern == l2.pattern == :sequence
+
+
+
+
+
 
 
 
@@ -197,16 +254,21 @@ function _spade!(f, F)
         f_tmp = Array{Array{IDList, 1}, 1}(0)
         for i = 1:n
             for j = (i+1):n
-                push!(f_tmp, first_merge(f[i], f[j]))
+                println(i, " ", j)
+                tmp_idlist = first_merge(f[i], f[j])
+                if tmp_idlist ≠ nothing
+                    push!(f_tmp, tmp_idlist)
+                end
             end
         end
         fk = reduce(vcat, f_tmp)
         push!(F, fk)
-        _spade!(fk, F)
+        # _spade!(fk, F)
     end
 end
 
-# this is broken now...
+
+# only does F[1] and F[2] now.
 function spade(seqs::Array{Sequence, 1})
     F = Array{Array{IDList, 1}, 1}(0)
     f1 = Array{IDList, 1}(0)
@@ -221,9 +283,23 @@ function spade(seqs::Array{Sequence, 1})
         push!(f1, first_idlist(seqs, itm))
     end
     push!(F, f1)
-    _spade!(f1, F)
+    i = 1
+    push!(F, Array{IDList,1}(0))
+    n = length(F[i])
 
-    return F
+    # first merge is handled differently
+    for j = 1:n
+        for k = (j+1):n
+            z_new = first_merge(F[i][j], F[i][k])
+            if z_new ≠ nothing
+                append!(F[i+1], z_new)
+            end
+        end
+    end
+    display(F)
+    i += 1
+
+    F
 end
 
 spade(seq_arr)
