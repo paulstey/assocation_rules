@@ -85,35 +85,12 @@ function equality_join(l1, l2)
         end
     end
     support = length(unique(sids))
-    return IDList(string(l1.item, ",", l2.item), sids, eids, :event, support)
+    return IDList(string(l1.item, ",", l2.item[end]), sids, eids, :event, support)
 end
 
 
-function temporal_join(l1, l2, both_sequences = false)
-    sids = Array{Int, 1}(0)
-    eids = Array{Int, 1}(0)
-    n = length(l1.sids)
-    m = length(l2.sids)
-    if both_sequences
-        for i = 1:n
-            for j = 1:m
-                if l1.sids[i] == l2.sids[j] && l1.eids[i] < l2.eids[j] && !already_seen(l1.sids[i], l2.eids[j], tm_sids, tm_eids)
-                    push!(sids, l1.sids[i])
-                    push!(eids, l1.eids[i])
-                end
-            end
-        end
-    elseif !both_sequences
-        if l1.item == l2.item
-            error("id-list 1 and id-list 2 are the same")
-        else
 
 
-
-
-    support = length(unique(sids))
-    return IDList(string(l1.item, ",", l2.item), sids, eids, :sequence, support)
-end
 
 
 
@@ -128,6 +105,49 @@ function already_seen(sid1, eid2, tm_sids, tm_eids)
     end
     return res
 end
+
+
+
+function temporal_join(l1, l2)
+    sids1 = Array{Int, 1}(0)
+    eids1 = Array{Int, 1}(0)
+    sids2 = Array{Int, 1}(0)
+    eids2 = Array{Int, 1}(0)
+    sids3 = Array{Int, 1}(0)
+    eids3 = Array{Int, 1}(0)
+
+    n = length(l1.sids)
+    m = length(l2.sids)
+    for i = 1:n
+        for j = 1:m
+            if l1.sids[i] == l2.sids[j]
+                if l1.eids[i] < l2.eids[j] && !already_seen(l1.sids[i], l2.eids[j], sids1, eids1)
+                    push!(sids1, l1.sids[i])
+                    push!(eids1, l2.eids[j])
+                elseif l1.eids[i] > l2.eids[j] && !already_seen(l1.sids[i], l1.eids[i], sids2, eids2)
+                    push!(sids2, l1.sids[i])
+                    push!(eids2, l1.eids[i])
+                elseif l1.eids[i] == l2.eids[j] && !already_seen(l1.sids[i], l1.eids[i], sids3, eids3)
+                    push!(sids3, l1.sids[i])
+                    push!(eids3, l1.eids[i])
+                end
+            end
+        end
+    end
+
+    supp1 = length(unique(sids1))
+    supp2 = length(unique(sids2))
+    supp3 = length(unique(sids3))
+
+    return IDList[IDList(string(l1.item, " => ", l2.item[end]), sids1, eids1, :sequence, supp1),
+                  IDList(string(l1.item, " => ", l1.item[end]), sids2, eids2, :sequence, supp2),
+                  IDList(string(l1.item, ",", l2.item[end]), sids3, eids3, :sequence, supp3)]
+end
+
+
+pa_idlist = IDList("P => A", [1, 1, 1, 4, 7, 8, 8, 8, 8, 13, 13, 15, 17, 20], [20, 30, 40, 60, 40, 10, 30, 50, 80, 50, 70, 60, 20, 10], :sequence, 4)
+
+pf_idlist = IDList("P => F", [1, 1, 3, 5, 8, 8, 8, 8, 11, 13, 16, 20], [70, 80, 10, 70, 30, 40, 50, 80, 30, 10, 80, 20], :sequence, 2)
 
 
 function first_merge!(l1::IDList, l2::IDList, eq_sids, eq_eids, tm_sids, tm_eids)
@@ -178,10 +198,28 @@ function first_merge(l1::IDList, l2::IDList)
     return merged_idlists
 end
 
-# Behave like Python's str.rfind() method, gets
-# the index of the last instance of `char` in the
-# string `s`. Return -1 if `char` is not found.
-function rfind(s, char)
+# Behaves a bit like Python's str.rfind() method, gets
+# the indices of where the `needle` appears in the `haystack`.
+# Returns 0:-1 if `needle` is not found.
+function rfind(haystack, needle::String)
+    n = length(haystack)
+    nchar = length(needle)
+    window = nchar - 1
+    start_idx = 0
+    stop_idx = -1
+    for i = 1:(n - window)
+        println(i)
+        if haystack[i:i+window] == needle
+            start_idx = i
+            stop_idx = i+window
+            break
+        end
+    end
+    return UnitRange{Int}(start_idx, stop_idx)
+end
+
+
+function rfind(s, char::Char)
     found_indcs = find(x -> x == char, collect(s))
     if isempty(found_indcs)
         last_idx = -1
@@ -192,7 +230,10 @@ function rfind(s, char)
 end
 
 
-function
+suffix(idlist) = idlist.item[end]
+
+
+
 
 
 
