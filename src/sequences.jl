@@ -276,11 +276,6 @@ end
 
 
 
-
-
-
-
-
 s1 = Sequence(
     1,
     [1, 2, 3, 4, 5, 6],
@@ -299,6 +294,9 @@ dlist = first_idlist(seq_arr, "d")
 
 equality_join(clist, dlist)
 equality_join(alist, dlist)
+
+
+@code_warntype merge_idlists(alist, clist)
 
 
 
@@ -325,17 +323,19 @@ function spade!(f, F, min_n)
             idlist_arr = merge_idlists(f[i], f[j])
 
             if idlist_arr ≠ nothing
-                append!(f_tmp, idlist_arr)
+                push!(f_tmp, idlist_arr)
             end
         end
     end
-    fk = reduce(vcat, f_tmp)
-    push!(F, fk)
+    if !isempty(f_tmp)
+        fk = reduce(vcat, f_tmp)
+        push!(F, fk)
+    end
 end
 
 
 # only does F[1] and F[2] now.
-function spade(seqs::Array{Sequence, 1}, minsupp = 0.1, max_length = 3)
+function spade(seqs::Array{Sequence, 1}, minsupp = 0.1, max_length = 4)
     F = Array{Array{IDList, 1}, 1}(0)
     f1 = Array{IDList, 1}(0)
     items = Array{String, 1}(0)
@@ -366,14 +366,14 @@ function spade(seqs::Array{Sequence, 1}, minsupp = 0.1, max_length = 3)
     end
     i = 3
     while i ≤ max_length && !allempty(F[i-1])
-        spade!(F[i], F)
+        spade!(F[i-1], F, min_n)
         i += 1
     end
 
     return F
 end
 
-spade(seq_arr)
+res = spade(seq_arr)
 
 
 
