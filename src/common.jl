@@ -11,7 +11,7 @@ type Rule
     lift::Float64
 end
 
-==(x::Rule, y::Rule) = return x.p == y.p && x.q == y.q
+==(x::Rule, y::Rule) = x.p == y.p && x.q == y.q
 
 function unique(v::Vector{Rule})
     out = Vector{Rule}(0)
