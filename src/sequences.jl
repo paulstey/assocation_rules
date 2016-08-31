@@ -15,9 +15,29 @@ type IDList
     pattern::String
     sids::Array{Int, 1}
     eids::Array{Int, 1}
+    elems::Array{String, 1}             # vector of the elements in `pattern`
     typ::Symbol                         # pattern type is `:initial`, `:sequence` or `:event`
+    parents::Array{String, 1}           # just for debugging in the development process
     supp::Int
+
+    IDList(pattern, sids, eids, elems, typ, parents) = new(pattern, sids, eids, elems, typ, parents, length(unique(sids)))
 end
+
+
+suffix(idlist::IDList) = idlist.elems[end]
+# prefix(idlist::IDList) = idlist.elems[1:end-1]
+
+function prefix(idlist::IDList)
+    if idlist.typ == :sequence
+        idx = first(rfind(idlist.pattern, " => "))
+        pfix = idlist.pattern[1:idx-1]
+    elseif idlist.typ == :event
+        idx  = rfind(idlist.pattern, ',')
+        pfix = idlist.pattern[1:idx-1]
+    end
+    return pfix
+end
+
 
 isempty(x::IDList) = isempty(x.sids)
 
@@ -32,12 +52,13 @@ function allempty(x::Array{IDList, 1})
     return res
 end
 
-# This is needed for the in() function 
+# This is needed for the in() function
 # to work in our unique() function
 function ==(x::IDList, y::IDList)
     res = x.pattern == y.pattern &&
           x.sids == y.sids &&
           x.eids == y.eids &&
+          x.elems == y.elems &&
           x.typ == y.typ &&
           x.supp == y.supp
     return res
@@ -67,8 +88,7 @@ function first_idlist(seqs::Array{Sequence, 1}, pattern)
             end
         end
     end
-    support = length(unique(sids))
-    return IDList(pattern, sids, eids, :initial, support)
+    return IDList(pattern, sids, eids, [pattern], :initial, [pattern])
 end
 
 
@@ -109,8 +129,7 @@ function equality_join(l1, l2)
             end
         end
     end
-    support = length(unique(sids))
-    return IDList(string(l1.pattern, ",", l2.pattern[end]), sids, eids, :event, support)
+    return IDList(string(l1.pattern, ",", l2.elems[end]), sids, eids, [l1.elems; string(l2.elems[end])], :event, [l1.pattern, l2.pattern])
 end
 
 
@@ -131,7 +150,7 @@ end
 # This function performs a temporal join for cases in which
 # both `l1` and `l2` are sequence patterns.
 
-function temporal_join_bothseq(l1, l2)
+function temporal_join(l1, l2, ::Type{Val{:sequence}}, ::Type{Val{:sequence}})
     # initialize 3 pairs of empty `sids` and `eids` arrays
     for i = 1:3, x in ["sids", "eids"]
         arr = Symbol(string(x, i))
@@ -147,8 +166,8 @@ function temporal_join_bothseq(l1, l2)
                     push!(sids1, l1.sids[i])
                     push!(eids1, l2.eids[j])
                 # elseif l1.eids[i] > l2.eids[j] && !already_seen(l1.sids[i], l1.eids[i], sids2, eids2)
-                elseif l2.eids[j] < l1.eids[i] && !already_seen(l2.sids[j], l1.eids[i], sids1, eids1)
-                    push!(sids2, l1.sids[i])
+                elseif l2.eids[j] < l1.eids[i] && !already_seen(l2.sids[j], l1.eids[i], sids2, eids2)
+                    push!(sids2, l2.sids[j])
                     push!(eids2, l1.eids[i])
                 elseif l1.eids[i] == l2.eids[j] && !already_seen(l1.sids[i], l1.eids[i], sids3, eids3) && suffix(l1) ≠ suffix(l2)
                     push!(sids3, l1.sids[i])
@@ -157,24 +176,37 @@ function temporal_join_bothseq(l1, l2)
             end
         end
     end
-    supp1 = length(unique(sids1))
-    supp2 = length(unique(sids2))
-    supp3 = length(unique(sids3))
 
-    return IDList[IDList(string(l1.pattern, " => ", l2.pattern[end]), sids1, eids1, :sequence, supp1),
-                  IDList(string(l2.pattern, " => ", l1.pattern[end]), sids2, eids2, :sequence, supp2),
-                  IDList(string(l1.pattern, ",", l2.pattern[end]), sids3, eids3, :event, supp3)]
+    idlist_arr = IDList[IDList(string(l1.pattern, " => ", l2.elems[end]),
+                               sids1,
+                               eids1,
+                               [l1.elems; string(l2.elems[end])],
+                               :sequence,
+                               [l1.pattern, l2.pattern]),
+                        IDList(string(l2.pattern, " => ", l1.elems[end]),
+                               sids2,
+                               eids2,
+                               [l2.elems; string(l1.elems[end])],
+                               :sequence,
+                               [l2.pattern, l1.pattern]),
+                        IDList(string(l1.pattern, ",", l2.elems[end]),
+                               sids3,
+                               eids3,
+                               [l1.elems; string(l2.elems[end])],
+                               :event,
+                               [l1.pattern, l2.pattern])]
+    return idlist_arr
 end
 
 # example from Zaki (2001)
-pa_idlist = IDList("P => A", [1, 1, 1, 4, 7, 8, 8, 8, 8, 13, 13, 15, 17, 20], [20, 30, 40, 60, 40, 10, 30, 50, 80, 50, 70, 60, 20, 10], :sequence, 4)
-pf_idlist = IDList("P => F", [1, 1, 3, 5, 8, 8, 8, 8, 11, 13, 16, 20], [70, 80, 10, 70, 30, 40, 50, 80, 30, 10, 80, 20], :sequence, 2)
+pa_idlist = IDList("P => A", [1, 1, 1, 4, 7, 8, 8, 8, 8, 13, 13, 15, 17, 20], [20, 30, 40, 60, 40, 10, 30, 50, 80, 50, 70, 60, 20, 10], ["P", "A"], :sequence, ["P", "A"])
+pf_idlist = IDList("P => F", [1, 1, 3, 5, 8, 8, 8, 8, 11, 13, 16, 20], [70, 80, 10, 70, 30, 40, 50, 80, 30, 10, 80, 20], ["P", "F"], :sequence, ["P", "F"])
 
-temporal_join_bothseq(pa_idlist, pf_idlist)
+# temporal_join_bothseq(pa_idlist, pf_idlist)
 
 
 
-function temporal_join_eventseq(l1, l2)
+function temporal_join(l1, l2, ::Type{Val{:event}}, ::Type{Val{:sequence}})
     sids = Array{Int,1}(0)
     eids = Array{Int,1}(0)
     n = length(l1.sids)
@@ -188,10 +220,14 @@ function temporal_join_eventseq(l1, l2)
             end
         end
     end
-    supp = length(unique(sids))
-    return IDList(string(l1.pattern, " => ", l2.pattern[end]), sids, eids, :sequence, supp)
+    return IDList[IDList(string(l1.pattern, " => ", l2.elems[end]), sids, eids, [l1.elems; string(l2.elems[end])], :sequence, [l1.pattern, l2.pattern])]
 end
 
+
+temporal_join(l1, l2, ::Type{Val{:sequence}}, ::Type{Val{:event}}) = temporal_join(l2, l1, Val{:event}, Val{:sequence})
+
+
+# function temporal_join_samesuffix(l1, l2)
 
 
 
@@ -226,14 +262,11 @@ function first_merge(l1::IDList, l2::IDList)
 
     first_merge!(l1, l2, eq_sids, eq_eids, tm_sids, tm_eids)
 
-    # calculate support
-    supp1 = length(unique(eq_sids))
-    supp2 = length(unique(tm_sids))
-
-    event_idlist = IDList(string(l1.pattern, ",", l2.pattern), eq_sids, eq_eids, :event, supp1)
-    seq_idlist = IDList(string(l1.pattern, " => ", l2.pattern), tm_sids, tm_eids, :sequence, supp2)
+    event_idlist = IDList(string(l1.pattern, ",", l2.elems[1]), eq_sids, eq_eids, [l1.elems; l2.elems], :event, [l1.pattern, l2.pattern])
+    seq_idlist = IDList(string(l1.pattern, " => ", l2.elems[1]), tm_sids, tm_eids, [l1.elems; l2.elems], :sequence, [l1.pattern, l2.pattern])
 
     merged_idlists = Array{IDList, 1}(0)
+
     if !isempty(event_idlist)
         push!(merged_idlists, event_idlist)
     end
@@ -256,8 +289,7 @@ function rfind(haystack, needle::String)
     window = nchar - 1
     start_idx = 0
     stop_idx = -1
-    for i = 1:(n - window)
-        println(i)
+    for i = (n - window):-1:1
         if haystack[i:i+window] == needle
             start_idx = i
             stop_idx = i+window
@@ -279,21 +311,11 @@ function rfind(s, char::Char)
 end
 
 
-suffix(idlist) = idlist.pattern[end]
-
-
-
-
-
 function merge_idlists(l1, l2)
     if l1.typ == l2.typ == :event                     # both event patterns
         idlist_arr = IDList[equality_join(l1, l2)]
-    elseif l1.typ == l2.typ == :sequence              # both sequence patterns
-        idlist_arr = temporal_join_bothseq(l1, l2)
-    elseif l1.typ == :event && l2.typ == :sequence
-        idlist_arr = IDList[temporal_join_eventseq(l1, l2)]
-    elseif l1.typ == :sequence && l2.typ == :event
-        idlist_arr = IDList[temporal_join_eventseq(l2, l1)]
+    else
+        idlist_arr = temporal_join(l1, l2, Val{l1.typ}, Val{l2.typ})
     end
     return idlist_arr          # array of merged ID-lists (often of length 1)
 end
@@ -317,15 +339,11 @@ alist = first_idlist(seq_arr, "a")
 clist = first_idlist(seq_arr, "c")
 dlist = first_idlist(seq_arr, "d")
 
-equality_join(clist, dlist)
-equality_join(alist, dlist)
-
-
 # @code_warntype merge_idlists(alist, clist)
 
 
 
-first_merge(clist, dlist)
+cdlist = first_merge(clist, dlist)
 first_merge(alist, dlist)
 
 
@@ -344,25 +362,25 @@ function spade!(f, F, min_n)
     n = length(f)
     f_tmp = Array{Array{IDList, 1}, 1}(0)
     for i = 1:n
-        for j = (i+1):n
+        for j = i:n
 
-            # If both are event sequences, we will only merge
+            # If both are event patterns, we will only merge
             # id-lists when the suffixes are not identical.
             if f[i].typ == f[j].typ == :event && suffix(f[i]) == suffix(f[j])
                 continue
-            else
+            elseif prefix(f[i]) == prefix(f[j])
                 idlist_arr = merge_idlists(f[i], f[j])
                 filter!(x -> x.supp ≥ min_n, idlist_arr)
-            end
 
-            if !allempty(idlist_arr)
-                push!(f_tmp, idlist_arr)
+                if !allempty(idlist_arr)
+                    push!(f_tmp, idlist_arr)
+                end
             end
         end
     end
     if !isempty(f_tmp)
         fk = reduce(vcat, f_tmp)
-        push!(F, fk)
+        push!(F, unique(fk))
     end
 end
 
@@ -407,8 +425,6 @@ function spade(seqs::Array{Sequence, 1}, minsupp = 0.1, max_length = 4)
 end
 
 res = spade(seq_arr, 0.5, 3)
-
-
 
 
 #
