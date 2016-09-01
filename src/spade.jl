@@ -1,4 +1,5 @@
 
+include("src/spade_utils.jl")
 
 type Sequence
     sid::Int64                          # sequence ID
@@ -32,7 +33,6 @@ function prefix(idlist::IDList)
     end
     return pfix
 end
-
 
 
 

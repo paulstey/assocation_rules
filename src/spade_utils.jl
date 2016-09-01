@@ -81,14 +81,11 @@ function rfind(haystack, needle::String)
     return UnitRange{Int}(start_idx, stop_idx)
 end
 
-
+# This is just syntactic sugar for findlast()
+# but aligns with the above rfind() when `needle`
+# is of type Char
 function rfind(haystack, needle::Char)
-    found_indcs = find(x -> x == needle, collect(haystack))
-    if isempty(found_indcs)
-        last_idx = -1
-    else
-        last_idx = maximum(found_indcs)
-    end
+    last_idx = findlast(haystack, needle)
     return last_idx
 end
 
