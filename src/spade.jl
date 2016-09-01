@@ -1,8 +1,4 @@
 
-import Base.display
-import Base.isempty
-import Base.==
-import Base.unique
 
 type Sequence
     sid::Int64                          # sequence ID
@@ -25,7 +21,6 @@ end
 
 
 suffix(idlist::IDList) = idlist.elems[end]
-# prefix(idlist::IDList) = idlist.elems[1:end-1]
 
 function prefix(idlist::IDList)
     if idlist.typ == :sequence
@@ -39,41 +34,6 @@ function prefix(idlist::IDList)
 end
 
 
-isempty(x::IDList) = isempty(x.sids)
-
-function allempty(x::Array{IDList, 1})
-    res = true
-    for i = 1:length(x)
-        if !isempty(x[i])
-            res = false
-            break
-        end
-    end
-    return res
-end
-
-# This is needed for the in() function
-# to work in our unique() function
-function ==(x::IDList, y::IDList)
-    res = x.pattern == y.pattern &&
-          x.sids == y.sids &&
-          x.eids == y.eids &&
-          x.elems == y.elems &&
-          x.typ == y.typ &&
-          x.supp == y.supp
-    return res
-end
-
-
-function unique(v::Array{IDList, 1})
-    out = Array{IDList, 1}(0)
-    for i = 1:length(v)
-        if !in(v[i], out)
-            push!(out, v[i])
-        end
-    end
-    return out
-end
 
 
 function first_idlist(seqs::Array{Sequence, 1}, pattern)
@@ -90,28 +50,6 @@ function first_idlist(seqs::Array{Sequence, 1}, pattern)
     end
     return IDList(pattern, sids, eids, [pattern], :initial, [pattern])
 end
-
-
-# function display(x::IDList)
-#     if isempty(x)
-#         println("$(x.pattern) has support 0")
-#     else
-#         last = x.sids[end]
-#         nchar = 2 + length(string(last))
-#
-#         println("$(x.pattern)")
-#         for i = 1:length(x.sids)
-#             println(rpad(x.sids[i], nchar, " "), x.eids[i])
-#         end
-#     end
-# end
-
-# function display(x::Array{IDList,1})
-#     for i = 1:length(x)
-#         display(x[i])
-#         println("\n")
-#     end
-# end
 
 
 
@@ -146,9 +84,6 @@ function already_seen(sid1, eid2, tm_sids, tm_eids)
 end
 
 
-
-# This function performs a temporal join for cases in which
-# both `l1` and `l2` are sequence patterns.
 
 function temporal_join(l1, l2, ::Type{Val{:sequence}}, ::Type{Val{:sequence}})
     # initialize 3 pairs of empty `sids` and `eids` arrays
@@ -227,10 +162,6 @@ end
 temporal_join(l1, l2, ::Type{Val{:sequence}}, ::Type{Val{:event}}) = temporal_join(l2, l1, Val{:event}, Val{:sequence})
 
 
-# function temporal_join_samesuffix(l1, l2)
-
-
-
 
 # The first merging operation executes both equality and
 # temporal joins on id-lists with atoms of length 1.
@@ -280,35 +211,6 @@ function first_merge(l1::IDList, l2::IDList)
     return merged_idlists
 end
 
-# Behaves a bit like Python's str.rfind() method, gets
-# the indices of where the `needle` appears in the `haystack`.
-# Returns 0:-1 if `needle` is not found.
-function rfind(haystack, needle::String)
-    n = length(haystack)
-    nchar = length(needle)
-    window = nchar - 1
-    start_idx = 0
-    stop_idx = -1
-    for i = (n - window):-1:1
-        if haystack[i:i+window] == needle
-            start_idx = i
-            stop_idx = i+window
-            break
-        end
-    end
-    return UnitRange{Int}(start_idx, stop_idx)
-end
-
-
-function rfind(s, char::Char)
-    found_indcs = find(x -> x == char, collect(s))
-    if isempty(found_indcs)
-        last_idx = -1
-    else
-        last_idx = maximum(found_indcs)
-    end
-    return last_idx
-end
 
 
 function merge_idlists(l1, l2)
@@ -339,23 +241,15 @@ alist = first_idlist(seq_arr, "a")
 clist = first_idlist(seq_arr, "c")
 dlist = first_idlist(seq_arr, "d")
 
-# @code_warntype merge_idlists(alist, clist)
-
-
+@code_warntype first_idlist(seq_arr, "d")
+@code_warntype merge_idlists(alist, clist)
 
 cdlist = first_merge(clist, dlist)
-first_merge(alist, dlist)
+adlist = first_merge(alist, dlist)
+
+@code_warntype temporal_join(cdlist[1], adlist[1], Val{:sequence}, Val{:sequence})
 
 
-function unique_items(s::Sequence)
-    d = Dict{String, Int64}()
-    for i = 1:length(s.items)
-        for k in s.items[i]
-            d[k] = get(d, k, 0) + 1
-        end
-    end
-    return collect(keys(d))
-end
 
 
 function spade!(f, F, min_n)
@@ -424,7 +318,7 @@ function spade(seqs::Array{Sequence, 1}, minsupp = 0.1, max_length = 4)
     return F
 end
 
-res = spade(seq_arr, 0.5, 3)
+res = spade(seq_arr, 0.5, 4)
 
 
-#
+    #
