@@ -1,5 +1,4 @@
 
-include("src/spade_utils.jl")
 
 type Sequence
     sid::Int64                          # sequence ID
@@ -19,6 +18,10 @@ type IDList
 
     IDList(pattern, sids, eids, elems, typ, parents) = new(pattern, sids, eids, elems, typ, parents, length(unique(sids)))
 end
+
+include("src/spade_utils.jl")
+
+
 
 
 suffix(idlist::IDList) = idlist.elems[end]
