@@ -69,7 +69,7 @@ This function behaves a bit like Python's str.rfind()
 method; it gets the indices where the `needle` appears
 in the `haystack`. Returns 0:-1 if `needle` is not found.
 """
-function rfind{T::String}(haystack::T, needle::T)
+function rfind(haystack::String, needle::String)
     n = length(haystack)
     nchar = length(needle)
     window = nchar - 1

@@ -24,6 +24,8 @@ function unique(v::Vector{Rule})
 end
 
 
+
+
 # Support Count: σ(x) = | {t_i|x ⊆ t_i, t_i ∈ T}|
 function σ(x::Array, T)
     res = 0
