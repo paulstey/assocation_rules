@@ -85,7 +85,6 @@ end
 # join functions. It takes a seqeunce ID and event ID,
 # as well as vectors of sequence and event IDs we
 # have already seen. It returns a boolean.
-
 function already_seen(sid1, eid2, tm_sids, tm_eids)
     res = false
     n = length(tm_sids)
@@ -102,7 +101,6 @@ end
 
 # This function executes a temporal join for those cases
 # in which both id-lists are for sequence patterns.
-
 function temporal_join(l1, l2, ::Type{Val{:sequence}}, ::Type{Val{:sequence}}, num_sequences)
     # initialize 3 pairs of empty `sids` and `eids` arrays
     for i = 1:3, x in ["sids", "eids"]
@@ -161,7 +159,6 @@ pf_idlist = IDList("P => F", [1, 1, 3, 5, 8, 8, 8, 8, 11, 13, 16, 20], [70, 80, 
 # This function executes the temporal join for cases in which
 # one id-list is for an event pattern and the other is for a
 # sequence pattern.
-
 function temporal_join(l1, l2, ::Type{Val{:event}}, ::Type{Val{:sequence}}, num_sequences)
     sids = Array{Int,1}(0)
     eids = Array{Int,1}(0)
@@ -191,7 +188,7 @@ function first_merge!(l1::IDList, l2::IDList, eq_sids, eq_eids, tm_sids, tm_eids
         for j = 1:length(l2.sids)
             if l1.sids[i] == l2.sids[j]
                 # equality join
-                if l1.eids[i] == l2.eids[j]
+                if l1.eids[i] == l2.eids[j] && suffix(l1) ≠ suffix(l2)
                     push!(eq_sids, l1.sids[i])
                     push!(eq_eids, l1.eids[i])
                 # temporal join
@@ -278,13 +275,12 @@ adlist = first_merge(alist, dlist, 2, 0.1)
 # which is the vector of IDLists `F[k-1]`, this function
 # generates `F[k]` by merging the IDList in `f`. It modifies
 # `F` in place.
-
 function spade!(f, F, num_sequences, minsupp)
     n = length(f)
     f_tmp = Array{Array{IDList, 1}, 1}(0)
+
     for i = 1:n
         for j = i:n
-
             # If both are event patterns, we will only merge
             # id-lists when the suffixes are not identical.
             if f[i].typ == f[j].typ == :event && suffix(f[i]) == suffix(f[j])
@@ -337,7 +333,7 @@ function spade(seqs::Array{Sequence, 1}, minsupp = 0.1, max_length = 4)
 
     # first merge is handled differently
     for j = 1:n
-        for k = (j+1):n
+        for k = j:n
             idlist_arr = first_merge(F[1][j], F[1][k], n_seq, minsupp)
             if idlist_arr ≠ nothing
                 append!(F[2], idlist_arr)
@@ -345,7 +341,10 @@ function spade(seqs::Array{Sequence, 1}, minsupp = 0.1, max_length = 4)
         end
     end
     i = 3
-    while i ≤ max_length && !allempty(F[i-1])
+
+    # We persist until arriving at max_length or
+    # until F[k] was empty on most recent iteration
+    while i ≤ max_length && length(F) == i - 1
         spade!(F[i-1], F, n_seq, minsupp)
         i += 1
     end

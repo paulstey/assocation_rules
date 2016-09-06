@@ -104,14 +104,29 @@ end
 
 
 
+function sanitize_items(items, excluded_strings)
+    res = items
+    n = length(res)
+    for i = 1:n
+        for s in excluded_strings
+            res[i] = replace(res[i], s, " ")
+        end
+    end
+    return res
+end
+
+
+
 """
 Given a data set, `dat`, in long format, this function extracts all
 the sequences and returns an array of `Sequence` objects.
 """
-function make_sequences(dat::Array{Any, 2}, sid_col, eid_col, item_col)
+function make_sequences(dat::Array{Any, 2}, sid_col, eid_col, item_col, excluded_strings = ["=>", ","])
     seq_ids = unique(dat[:, sid_col])
     num_seqs = length(seq_ids)
     seq_arr = Array{Sequence, 1}(num_seqs)
+
+    dat[:, item_col] = sanitize_items(dat[:, item_col], excluded_strings)
 
     for (i, sid) in enumerate(seq_ids)
         row_indcs = find(dat[:, sid_col] .== sid)
@@ -125,9 +140,7 @@ function make_sequences(dat::Array{Any, 2}, sid_col, eid_col, item_col)
 
             indcs = find(eid .== dat_subset[:, eid_col])
             items_arr = convert(Array{String, 1}, dat_subset[indcs, item_col])
-            println(sid, " ", eid, " ", items_arr)
-
-            push!(items, items_arr)
+            push!(items, sort(items_arr))
 
         end
         seq_arr[i] = Sequence(sid, event_ids, items)
