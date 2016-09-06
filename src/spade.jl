@@ -22,10 +22,13 @@ end
 include("src/spade_utils.jl")
 
 
-
-
+# This function extracts the suffix
+# from the ID list's pattern
 suffix(idlist::IDList) = idlist.elems[end]
 
+
+# This function extracts the prefix
+# from the ID list's pattern
 function prefix(idlist::IDList)
     if idlist.typ == :sequence
         idx = first(rfind(idlist.pattern, " => "))
@@ -74,6 +77,12 @@ function equality_join(l1, l2)
 end
 
 
+
+# This is a helper function used in the various
+# join functions. It takes a seqeunce ID and event ID,
+# as well as vectors of sequence and event IDs we
+# have already seen. It returns a boolean.
+
 function already_seen(sid1, eid2, tm_sids, tm_eids)
     res = false
     n = length(tm_sids)
@@ -87,6 +96,9 @@ function already_seen(sid1, eid2, tm_sids, tm_eids)
 end
 
 
+
+# This function executes a temporal join for those cases
+# in which both id-lists are for sequence patterns.
 
 function temporal_join(l1, l2, ::Type{Val{:sequence}}, ::Type{Val{:sequence}})
     # initialize 3 pairs of empty `sids` and `eids` arrays
@@ -140,9 +152,12 @@ end
 pa_idlist = IDList("P => A", [1, 1, 1, 4, 7, 8, 8, 8, 8, 13, 13, 15, 17, 20], [20, 30, 40, 60, 40, 10, 30, 50, 80, 50, 70, 60, 20, 10], ["P", "A"], :sequence, ["P", "A"])
 pf_idlist = IDList("P => F", [1, 1, 3, 5, 8, 8, 8, 8, 11, 13, 16, 20], [70, 80, 10, 70, 30, 40, 50, 80, 30, 10, 80, 20], ["P", "F"], :sequence, ["P", "F"])
 
-# temporal_join_bothseq(pa_idlist, pf_idlist)
 
 
+
+# This function executes the temporal join for cases in which
+# one id-list is for an event pattern and the other is for a
+# sequence pattern.
 
 function temporal_join(l1, l2, ::Type{Val{:event}}, ::Type{Val{:sequence}})
     sids = Array{Int,1}(0)
@@ -215,7 +230,7 @@ function first_merge(l1::IDList, l2::IDList)
 end
 
 
-
+# This function wraps all our join functions.
 function merge_idlists(l1, l2)
     if l1.typ == l2.typ == :event                     # both event patterns
         idlist_arr = IDList[equality_join(l1, l2)]
@@ -255,6 +270,12 @@ adlist = first_merge(alist, dlist)
 
 
 
+# This function is our workhorse for the spade() function
+# below. It is only called starting at `F[3]`. Given `f`,
+# which is the vector of IDLists `F[k-1]`, this function
+# generates `F[k]` by merging the IDList in `f`. It modifies
+# `F` in place.
+
 function spade!(f, F, min_n)
     n = length(f)
     f_tmp = Array{Array{IDList, 1}, 1}(0)
@@ -282,7 +303,16 @@ function spade!(f, F, min_n)
 end
 
 
-# only does F[1] and F[2] now.
+
+"""
+Given a vector of `Sequence` objects, this function executes the SPADE
+algorithm (Zaki, 2001). We can set `minsupp` to be our desired minimum level
+of support for a pattern. And we can set `max_length` to control the maximum
+number of items in a given pattern. The return value is an array of arrays,
+`F`, where each element of `F` is an array of IDList objects of length `k`.
+For example, `F[2]` has an array of all IDLists with patterns of length 2 (e.g.,
+{A, B} or {B => C})
+"""
 function spade(seqs::Array{Sequence, 1}, minsupp = 0.1, max_length = 4)
     F = Array{Array{IDList, 1}, 1}(0)
     f1 = Array{IDList, 1}(0)

@@ -62,10 +62,14 @@ end
 #     end
 # end
 
-# Behaves a bit like Python's str.rfind() method, gets
-# the indices of where the `needle` appears in the `haystack`.
-# Returns 0:-1 if `needle` is not found.
-function rfind(haystack, needle::String)
+
+
+"""
+This function behaves a bit like Python's str.rfind()
+method; it gets the indices where the `needle` appears
+in the `haystack`. Returns 0:-1 if `needle` is not found.
+"""
+function rfind{T::String}(haystack::T, needle::T)
     n = length(haystack)
     nchar = length(needle)
     window = nchar - 1
@@ -81,10 +85,7 @@ function rfind(haystack, needle::String)
     return UnitRange{Int}(start_idx, stop_idx)
 end
 
-# This is just syntactic sugar for findlast()
-# but aligns with the above rfind() when `needle`
-# is of type Char
-function rfind(haystack, needle::Char)
+function rfind(haystack::String, needle::Char)
     last_idx = findlast(haystack, needle)
     return last_idx
 end
