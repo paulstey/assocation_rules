@@ -1,8 +1,12 @@
+# Functions for parallelization of portions of a-prior algorithm
+# This file is part of AssociationRules.jl package
+# Author: Paul Stey
+# 2016-08-12
+
 using Base.Threads
 
 # v = [[1, 2, 3], [1, 2, 3], [1, 2, 3],  [1, 2, 5], [1, 3, 4], [1, 4, 5], [2, 3, 4], [2, 3, 4], [2, 3, 5], [3, 4, 5]]
 # v = [sample(1:20, 5) for x = 1:10_000];
-
 
 
 function combine_dicts!(d, d2)

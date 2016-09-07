@@ -1,4 +1,61 @@
-# Find k-frequent itemset in given transactions of items
+# Core functions for a-prior algorithm
+# This file is part of AssociationRules.jl package
+# Author: Paul Stey
+# 2016-08-12
+
+type Rule
+    p::Array            # antecedent (rhs)
+    q::Array            # consequent (lhs)
+    supp::Float64
+    conf::Float64
+    lift::Float64
+end
+
+
+# Support Count: σ(x) = | {t_i|x ⊆ t_i, t_i ∈ T}|
+function σ(x::Array, T)
+    res = 0
+    for t in T
+        if x ⊆ t
+            res += 1
+        end
+    end
+    return res
+end
+
+
+function σ(x::String, T)
+    res = 0
+    for t in T
+        if x in t
+            res += 1
+        end
+    end
+    return res
+end
+
+
+# Support of rule x -> y, for which x ∩ y = ∅
+function supp(x, y, T)
+    den = length(T)
+    num = σ(union(x, y), T)
+    return num/den
+end
+
+# Confidence of rule x -> y, for which x ∩ y = ∅
+function conf(x, y, T)
+    num = σ(union(x, y), T)
+    den = σ(x, T)
+    return num/den
+end
+
+
+# Lift of rule x -> y, for which x ∩ y = ∅
+# Requires confidence has already been computed
+function lift(confidence, y, T)
+    den = σ(y, T)/length(T)
+    return confidence/den
+end
 
 
 # Given a vector of transactions (each is a vector), this
@@ -33,7 +90,7 @@ function apriori_gen{M}(x::Array{Array{M, 1}, 1})
 
     for i = 1:n
         sort!(x[i])
-        
+
         for j = (i+1):n
             sort!(x[j])
             keep_candidate = true
@@ -248,15 +305,5 @@ function apriori(T, minsupp, minconf, multi_consquents = true)
     return R
 end
 
-# l = [sample([1, 2, 3, 4, 5], 5, replace = false) for x in 1:100_000]
-#
-# fk = freq_itemsets(l, 0.1)
-#
-# # rule_vec = Array{Rule, 1}(0)
-# # gen_onerules!([2], fk[1], rule_vec, l, 0.1, 0.8)
-# # rule_vec
-#
-# @time rules = apriori(l, 0.1, 0.8, false);
-#
 
 #

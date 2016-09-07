@@ -1,3 +1,9 @@
+# Testing performance of functions
+# This file is part of AssociationRules.jl package
+# Author: Paul Stey
+# 2016-08-12
+
+
 # Performance tuning
 
 v = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4], [1, 4, 5], [3, 4, 5]]

@@ -1,4 +1,7 @@
-
+# Core functions for the SPADE algorithm
+# This file is part of AssociationRules.jl package
+# Author: Paul Stey
+# 2016-08-12
 
 type Sequence
     sid::Int64                          # sequence ID
@@ -22,7 +25,19 @@ type IDList
     end
 end
 
-include("src/spade_utils.jl")
+
+isempty(x::IDList) = isempty(x.sids)
+
+function allempty(x::Array{IDList, 1})
+    res = true
+    for i = 1:length(x)
+        if !isempty(x[i])
+            res = false
+            break
+        end
+    end
+    return res
+end
 
 
 # This function extracts the suffix
@@ -44,7 +59,8 @@ function prefix(idlist::IDList)
 end
 
 
-
+# Given an array of `Sequence` objects, this function
+# returns the first (k = 1) id-lists.
 function first_idlist(seqs::Array{Sequence, 1}, pattern, num_sequences)
     sids = Array{Int, 1}(0)
     eids = Array{Int, 1}(0)
@@ -202,6 +218,9 @@ function first_merge!(l1::IDList, l2::IDList, eq_sids, eq_eids, tm_sids, tm_eids
 end
 
 
+# Given two id-lists, this function executes the first
+# merge operation. An array of merged id-list (k = 2)
+# is returned.
 function first_merge(l1::IDList, l2::IDList, num_sequences, minsupp)
     eq_sids = Array{Int, 1}(0)
     tm_sids = Array{Int, 1}(0)
@@ -222,10 +241,6 @@ function first_merge(l1::IDList, l2::IDList, num_sequences, minsupp)
     if !isempty(seq_idlist) && seq_idlist.supp ≥ minsupp
         push!(merged_idlists, seq_idlist)
     end
-    if isempty(merged_idlists)
-        return nothing
-    end
-
     return merged_idlists
 end
 
@@ -352,11 +367,4 @@ function spade(seqs::Array{Sequence, 1}, minsupp = 0.1, max_length = 4)
     return F
 end
 
-d = readcsv("./data/zaki_data.csv", skipstart = 1)
-
-seq_array = make_sequences(d, 2, 3, 1)
-
-res = spade(seq_array, 0.5, 4)
-
-
-    #
+#

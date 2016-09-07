@@ -1,21 +1,8 @@
+# Utility functions for SPADE algorithm
+# This file is part of AssociationRules.jl package
+# Author: Paul Stey
+# 2016-08-12
 
-import Base.display
-import Base.isempty
-import Base.==
-import Base.unique
-
-isempty(x::IDList) = isempty(x.sids)
-
-function allempty(x::Array{IDList, 1})
-    res = true
-    for i = 1:length(x)
-        if !isempty(x[i])
-            res = false
-            break
-        end
-    end
-    return res
-end
 
 # This is needed for the in() function
 # to work in our unique() function
@@ -148,6 +135,6 @@ function make_sequences(dat::Array{Any, 2}, sid_col, eid_col, item_col, excluded
     return seq_arr
 end
 
-d = readcsv("./data/zaki_data.csv", skipstart = 1)
-
-seq_array = make_sequences(d, 2, 3, 1)
+# d = readcsv("./data/zaki_data.csv", skipstart = 1)
+#
+# seq_array = make_sequences(d, 2, 3, 1)

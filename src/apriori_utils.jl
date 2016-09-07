@@ -1,4 +1,42 @@
-# using Formatting
+# Utility functions for a-priori algorithm
+# This file is part of AssociationRules.jl package
+# Author: Paul Stey
+# 2016-08-12
+
+
+
+==(x::Rule, y::Rule) = x.p == y.p && x.q == y.q
+
+
+function unique(v::Vector{Rule})
+    out = Vector{Rule}(0)
+    for i = 1:length(v)
+        if !in(v[i], out)
+            push!(out, v[i])
+        end
+    end
+    return out
+end
+
+
+"""
+This function converts a data matrix `X` into a
+vector of transactions, where each row in the orginal
+matrix is now an element of the vector. This is used
+for pre-processing data prior to applying the a-priori
+algorithm for association rule mining.
+"""
+function make_transactions{T<:AbstractArray}(X::T)
+    n, p = size(X)
+    X = map(string, X)
+
+    out = Array{Array{Any, 1}, 1}(n)
+    for i = 1:n
+        out[i] = convert(Array{String, 1}, X[i, :])
+    end
+    return out
+end
+
 
 function wrap_line(v, maxchar)
     if isempty(v)
@@ -110,10 +148,6 @@ function print_wrapped_lines(p_line, q_line, colwidth)
 end
 
 # print_wrapped_lines(wrap_line(v1, m), wrap_line(v2, m), 20)
-
-
-
-
 
 
 
