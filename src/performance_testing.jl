@@ -1,8 +1,3 @@
-# Testing performance of functions
-# This file is part of AssociationRules.jl package
-# Author: Paul Stey
-# 2016-08-12
-
 
 # Performance tuning
 

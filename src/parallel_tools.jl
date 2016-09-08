@@ -1,7 +1,4 @@
-# Functions for parallelization of portions of a-prior algorithm
-# This file is part of AssociationRules.jl package
-# Author: Paul Stey
-# 2016-08-12
+
 
 using Base.Threads
 

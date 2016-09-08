@@ -1,8 +1,3 @@
-# Utility functions for SPADE algorithm
-# This file is part of AssociationRules.jl package
-# Author: Paul Stey
-# 2016-08-12
-
 
 # This is needed for the in() function
 # to work in our unique() function
@@ -101,6 +96,7 @@ function sanitize_items(items, excluded_strings)
     end
     return res
 end
+
 
 
 

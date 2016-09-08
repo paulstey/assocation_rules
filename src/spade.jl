@@ -1,7 +1,3 @@
-# Core functions for the SPADE algorithm
-# This file is part of AssociationRules.jl package
-# Author: Paul Stey
-# 2016-08-12
 
 type Sequence
     sid::Int64                          # sequence ID

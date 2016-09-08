@@ -1,8 +1,3 @@
-# Utility functions for a-priori algorithm
-# This file is part of AssociationRules.jl package
-# Author: Paul Stey
-# 2016-08-12
-
 
 
 ==(x::Rule, y::Rule) = x.p == y.p && x.q == y.q

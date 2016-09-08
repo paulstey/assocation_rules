@@ -1,6 +1,3 @@
-# AssociationRules.jl
-# Author: Paul Stey
-# 2016-08-12
 
 using StatsBase
 using Formatting

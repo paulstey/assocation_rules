@@ -1,7 +1,3 @@
-# Testing package's functions
-# This file is part of AssociationRules.jl package
-# Author: Paul Stey
-# 2016-08-12
 
 # testing a-priori algorithm
 l = [sample([1, 2, 3, 4, 5], 5, replace = false) for x in 1:100_000]

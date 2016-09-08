@@ -1,7 +1,3 @@
-# Core functions for a-prior algorithm
-# This file is part of AssociationRules.jl package
-# Author: Paul Stey
-# 2016-08-12
 
 type Rule
     p::Array            # antecedent (rhs)
@@ -33,6 +29,18 @@ function σ(x::String, T)
     end
     return res
 end
+
+
+function σ{U<:Number}(x::U, T)
+    res = 0
+    for t in T
+        if x in t
+            res += 1
+        end
+    end
+    return res
+end
+
 
 
 # Support of rule x -> y, for which x ∩ y = ∅
