@@ -130,7 +130,7 @@ function make_sequences(dat::Array{Any, 2}, sid_col, eid_col, item_col, excluded
     end
     return seq_arr
 end
-
+ 
 # d = readcsv("./data/zaki_data.csv", skipstart = 1)
 #
 # seq_array = make_sequences(d, 2, 3, 1)
