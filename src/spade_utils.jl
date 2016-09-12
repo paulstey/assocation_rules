@@ -7,7 +7,7 @@ function ==(x::IDList, y::IDList)
     res = x.pattern == y.pattern &&
           x.sids == y.sids &&
           x.eids == y.eids &&
-          x.elems == y.elems &&
+        #   x.elems == y.elems &&
           x.typ == y.typ &&
           x.supp == y.supp
     return res
