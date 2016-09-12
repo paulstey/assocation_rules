@@ -6,6 +6,6 @@ rules = apriori(l, 0.1, 0.8, false);
 
 
 # testing SPADE algorithm
-d = readcsv("./data/zaki_data.csv", skipstart = 1)
+d = readcsv("../data/zaki_data.csv", skipstart = 1)
 seqs = make_sequences(d, 2, 3, 1)
-res = spade(seqs, 0.2, 5)
+@time res = spade(seqs, 0.2, 4);

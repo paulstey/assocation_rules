@@ -316,7 +316,7 @@ function spade!(f, F, num_sequences, minsupp)
     end
     if !isempty(f_tmp)
         fk = reduce(vcat, f_tmp)
-        push!(F, unique(fk))
+        push!(F, fk)
     end
 end
 
@@ -352,7 +352,7 @@ function spade(seqs::Array{Sequence, 1}, minsupp = 0.1, max_length = 4)
 
     # first merge is handled differently
     for j = 1:n
-        for k = j:n
+        for k = 1:n
             idlist_arr = first_merge(F[1][j], F[1][k], n_seq, minsupp)
             if idlist_arr ≠ nothing
                 append!(F[2], idlist_arr)

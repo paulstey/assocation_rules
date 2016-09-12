@@ -2,25 +2,29 @@
 # This is needed for the in() function
 # to work in our unique() function
 
-# original version of spade.jl
-function ==(x::IDList, y::IDList)
-    res = x.pattern == y.pattern &&
-          x.sids == y.sids &&
-          x.eids == y.eids &&
-        #   x.elems == y.elems &&
-          x.typ == y.typ &&
-          x.supp == y.supp
-    return res
-end
+# original version: spade.jl
 
 # function ==(x::IDList, y::IDList)
-#     res = x.sids == y.sids &&
+#     res = x.pattern == y.pattern &&
+#           x.sids == y.sids &&
 #           x.eids == y.eids &&
-#           x.patrn == y.patrn &&
+#         #   x.elems == y.elems &&
 #           x.typ == y.typ &&
 #           x.supp == y.supp
 #     return res
 # end
+
+
+# used for alternative version: spade_alt.jl
+
+function ==(x::IDList, y::IDList)
+    res = x.sids == y.sids &&
+          x.eids == y.eids &&
+          x.patrn == y.patrn &&
+          x.typ == y.typ &&
+          x.supp == y.supp
+    return res
+end
 
 
 function unique(v::Array{IDList, 1})
@@ -106,6 +110,19 @@ function sanitize_items(items, excluded_strings)
         end
     end
     return res
+end
+
+
+function find(x::Array{IDList, 1}, patrn::String)
+    indcs = Array{Int, 1}(0)
+    n = length(x)
+
+    for i = 1:n
+        if x[i].pattern == patrn
+            push!(indcs, i)
+        end
+    end
+    return indcs
 end
 
 

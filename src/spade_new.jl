@@ -1,3 +1,10 @@
+# NOTE: This is an alternative to the spade.jl implementation. In this
+# version we don't rely on building up the id-list pattern with string
+# concatenation. Instead, we used a vector of vectors (of string), where
+# each nested vector corresponds to a time point. For example, the pattern
+# [["a"], ["b", "c"]] has one item in the first time point and two in the
+# second. So it corresponds to "a => b,c" in our original implementation.
+
 import Base.isempty
 
 
@@ -94,7 +101,7 @@ function equality_join(l1, l2, num_sequences)
             end
         end
     end
-    pattern::Array{Array{String, 1}, 1} = [l1.patrn[1:end-1]; [[l1.patrn[end]; suffix(l2.patrn)]]]
+    pattern::Array{Array{String, 1}, 1} = [l1.patrn[1:end-1]; [sort([l1.patrn[end]; suffix(l2.patrn)])]]
 
     return IDList(pattern, sids, eids, :event, num_sequences)
 end
@@ -149,7 +156,7 @@ function temporal_join(l1, l2, ::Type{Val{:sequence}}, ::Type{Val{:sequence}}, n
         end
     end
     seq_patrn1 = [l1.patrn; [[suffix(l2.patrn)]]]
-    event_patrn::Array{Array{String, 1}, 1} = [l1.patrn[1:end-1]; [[l1.patrn[end]; suffix(l2.patrn)]]]
+    event_patrn::Array{Array{String, 1}, 1} = [l1.patrn[1:end-1]; [sort([l1.patrn[end]; suffix(l2.patrn)])]]
     seq_patrn2 = [l2.patrn; [[suffix(l1.patrn)]]]
 
     idlist_arr = IDList[IDList(seq_patrn1,
@@ -237,7 +244,7 @@ function first_merge(l1::IDList, l2::IDList, num_sequences, minsupp)
 
     first_merge!(l1, l2, eq_sids, eq_eids, tm_sids, tm_eids)
 
-    event_patrn = [l1.patrn[1:end-1]; [[l1.patrn[end]; suffix(l2.patrn)]]]
+    event_patrn = [l1.patrn[1:end-1]; [sort([l1.patrn[end]; suffix(l2.patrn)])]]
     seq_patrn = [l1.patrn; [[suffix(l2.patrn)]]]
 
     event_idlist = IDList(event_patrn, eq_sids, eq_eids, :event, num_sequences)
@@ -358,13 +365,14 @@ function spade(seqs::Array{Sequence, 1}, minsupp = 0.1, max_length = 4)
 
     # first merge is handled differently
     for j = 1:n
-        for k = j:n
+        for k = 1:n
             idlist_arr = first_merge(F[1][j], F[1][k], n_seq, minsupp)
             if idlist_arr ≠ nothing
                 append!(F[2], idlist_arr)
             end
         end
     end
+    F[2] = unique(F[2])
     i = 3
 
     # We persist until arriving at max_length or
