@@ -1,6 +1,8 @@
 
 # This is needed for the in() function
 # to work in our unique() function
+
+# original version of spade.jl
 function ==(x::IDList, y::IDList)
     res = x.pattern == y.pattern &&
           x.sids == y.sids &&
@@ -10,6 +12,15 @@ function ==(x::IDList, y::IDList)
           x.supp == y.supp
     return res
 end
+
+# function ==(x::IDList, y::IDList)
+#     res = x.sids == y.sids &&
+#           x.eids == y.eids &&
+#           x.patrn == y.patrn &&
+#           x.typ == y.typ &&
+#           x.supp == y.supp
+#     return res
+# end
 
 
 function unique(v::Array{IDList, 1})
@@ -130,7 +141,7 @@ function make_sequences(dat::Array{Any, 2}, sid_col, eid_col, item_col, excluded
     end
     return seq_arr
 end
- 
+
 # d = readcsv("./data/zaki_data.csv", skipstart = 1)
 #
 # seq_array = make_sequences(d, 2, 3, 1)
