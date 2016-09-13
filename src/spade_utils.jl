@@ -112,7 +112,8 @@ function sanitize_items(items, excluded_strings)
     return res
 end
 
-
+# these two find() functions are just for dev purposes
+# to track down cases where we disagree with R
 function find(x::Array{IDList, 1}, patrn::String)
     indcs = Array{Int, 1}(0)
     n = length(x)
@@ -125,6 +126,18 @@ function find(x::Array{IDList, 1}, patrn::String)
     return indcs
 end
 
+
+function find(x::Array{IDList, 1}, patrn::Array{Array{String, 1}, 1})
+    indcs = Array{Int, 1}(0)
+    n = length(x)
+
+    for i = 1:n
+        if x[i].patrn == patrn
+            push!(indcs, i)
+        end
+    end
+    return indcs
+end
 
 
 
@@ -162,3 +175,52 @@ end
 # d = readcsv("./data/zaki_data.csv", skipstart = 1)
 #
 # seq_array = make_sequences(d, 2, 3, 1)
+
+
+
+# Given a vector of strings, this function returns
+# a single string with all elements of the vector
+# having been concatenated.
+function join_strings(x::Array{String, 1})
+    n = length(x)
+    s = ""
+    for i = 1:n
+        if i < n
+            s *= string(x[i], ",")
+        elseif i == n
+            s *= x[i]
+        end
+    end
+    return s
+end
+
+
+
+# Given the pattern from an IDList, this function returns
+# a string illustrating the temporal relation of the
+# seqeunce. For example: "{A} -> {B,C} -> {D}".
+function pattern_string(x::Array{Array{String, 1}, 1})
+    n = length(x)
+    s = ""
+    for i = 1:n
+        if i < n
+            s *= string("{", join_strings(x[i]), "} -> ")
+        elseif i == n
+            s *= string("{", join_strings(x[i]), "}")
+        end
+    end
+    return s
+end
+
+
+function count_patterns(F::Array{Array{IDList, 1}, 1})
+    m = length(F)
+    cnt = Dict{String, Int}()
+    for k = 1:m
+        n = length(F[k]) 
+        for i = 1:n
+            cnt[pattern_string(F[k][i].patrn)] = F[k][i].supp_cnt
+        end
+    end
+    cnt
+end

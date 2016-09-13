@@ -19,7 +19,7 @@ function σ(x::Array, T)
     return res
 end
 
-
+# Support Count: σ(x) = | {t_i|x ⊆ t_i, t_i ∈ T}|
 function σ(x::String, T)
     res = 0
     for t in T
@@ -30,7 +30,7 @@ function σ(x::String, T)
     return res
 end
 
-
+# Support Count: σ(x) = | {t_i|x ⊆ t_i, t_i ∈ T}|
 function σ{U<:Number}(x::U, T)
     res = 0
     for t in T

@@ -21,9 +21,10 @@ type IDList
     eids::Array{Int, 1}
     typ::Symbol                         # pattern type is `:initial`, `:sequence` or `:event`
     supp::Float64
+    supp_cnt::Int
 
     function IDList(patrn, sids, eids, typ, num_sequences)
-        res = new(patrn, sids, eids, typ, length(unique(sids))/num_sequences)
+        res = new(patrn, sids, eids, typ, length(unique(sids))/num_sequences, length(unique(sids)))
         return res
     end
 end
@@ -123,6 +124,8 @@ function already_seen(sid1, eid2, tm_sids, tm_eids)
     end
     return res
 end
+
+# @code_warntype already_seen([1, 1, 1, 2], [10, 15, 20, 10], [1, 2, 3], [10, 20, 15])
 
 
 
