@@ -1,6 +1,7 @@
 
 using StatsBase
 using Formatting
+using Combinatorics
 using Base.Threads
 
 import Base.==

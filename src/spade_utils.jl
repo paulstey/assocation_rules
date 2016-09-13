@@ -194,6 +194,8 @@ function join_strings(x::Array{String, 1})
     return s
 end
 
+join_strings(["ab", "cd"])
+
 
 
 # Given the pattern from an IDList, this function returns
@@ -212,15 +214,102 @@ function pattern_string(x::Array{Array{String, 1}, 1})
     return s
 end
 
+function pattern_string(args...)
+    n = length(args)
+    s = ""
+    for i = 1:n
+        if i < n
+            s *= string("{", join_strings(args[i]), "} -> ")
+        elseif i == n
+            s *= string("{", join_strings(args[i]), "}")
+        end
+    end
+    println(s)
+    return s
+end
+
+pattern_string(["ab", "cd"], ["de", "fg"])
+
+function addpattern!(v, args...)
+    s = pattern_string(args...)
+    push!(v, s)
+end
+
+
+
+
 
 function count_patterns(F::Array{Array{IDList, 1}, 1})
     m = length(F)
     cnt = Dict{String, Int}()
     for k = 1:m
-        n = length(F[k]) 
+        n = length(F[k])
         for i = 1:n
             cnt[pattern_string(F[k][i].patrn)] = F[k][i].supp_cnt
         end
     end
     cnt
 end
+
+
+
+function gen_combos(x::Array{Array{String,1},1})
+    allcombos = Array{Array{Array{String,1},1},1}(0)
+
+    n = length(x)
+    for i = 1:n
+        combos = collect(combinations(x[i]))
+        push!(allcombos, combos)
+    end
+    allcombos
+end
+
+
+
+
+function subset_pattern(x::Array{Array{Array{String, 1}, 1}, 1})
+    out = String[]
+    for c1 in x[1]
+        for c2 in x[2]
+            push!(out, string(join_strings(c1), " -> ", join_strings(c2)))
+        end
+    end
+    out
+end
+
+combins = gen_combos(res[6][13].patrn)
+
+subset_pattern(combins)
+
+
+
+
+function nloops_gen4{T}(a::Array{T,1})
+    vars = Symbol[]
+    inner = :(addpattern!($out))
+    outer = inner
+    n = length(a)
+
+    for dim = 1:n
+        var = Symbol("c$dim")
+        push!(vars, var)
+        push!(inner.args, var)
+        outer = :(
+            for $var in combins[$dim]
+                $outer
+            end
+        )
+        # println(outer)
+    end
+    # push!(inner.args, :out)
+    return outer
+end
+
+
+combins = gen_combos(res[6][13].patrn)
+
+push!(combins[1], String[""])
+push!(combins[2], String[""])
+push!(combins[3], String[""])
+
+nloops_gen4(combins)
