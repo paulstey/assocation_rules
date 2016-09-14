@@ -101,7 +101,7 @@ end
 
 
 
-function sanitize_items(items, excluded_strings)
+function sanitize_items(items, excluded_strings = ["{", "}", "->"])
     res = items
     n = length(res)
     for i = 1:n
@@ -112,7 +112,11 @@ function sanitize_items(items, excluded_strings)
     return res
 end
 
-# these two find() functions are just for dev purposes
+# itms1 = ["this -> is a {string}", "and {so} is -> {} this"]
+# sanitize_items(itms1)
+
+
+# These two find() functions are just for dev purposes
 # to track down cases where we disagree with R
 function find(x::Array{IDList, 1}, patrn::String)
     indcs = Array{Int, 1}(0)
@@ -224,7 +228,6 @@ function pattern_string(args...)
             s *= string("{", join_strings(args[i]), "}")
         end
     end
-    println(s)
     return s
 end
 
@@ -280,33 +283,53 @@ function subset_pattern(x::Array{Array{Array{String, 1}, 1}, 1})
     out
 end
 
-combins = gen_combos(res[6][13].patrn)
+# combins = gen_combos(res[6][13].patrn)
+#
+# subset_pattern(combins)
+#
 
-subset_pattern(combins)
 
+# Given a frequent pattern (from and IDList), this function returns
+# all the sub-patterns that can be generated that preserve the order.
+# For example, we can generate the sub-pattern {A} -> {B} (and
+# many others) from the original pattern {A,C} -> {B,D} -> {F,E}.
 
+function gen_combin_subpatterns(patrn)
+    global combinations_arrays = gen_combos(patrn)
 
-
-function nloops_gen4{T}(a::Array{T,1})
-    vars = Symbol[]
-    inner = :(addpattern!($out))
-    outer = inner
-    n = length(a)
-
-    for dim = 1:n
-        var = Symbol("c$dim")
-        push!(vars, var)
-        push!(inner.args, var)
-        outer = :(
-            for $var in combins[$dim]
-                $outer
-            end
-        )
-        # println(outer)
+    # Here we add vectors with empty strings b/c for each
+    # timepoint set, x1, where x1 = {...}, we want to consider
+    # combinations in which no element is drawn from x1.
+    for i = 1:length(combinations_arrays)
+        push!(combinations_arrays[i], String[""])
     end
-    # push!(inner.args, :out)
-    return outer
+    out = String[]
+
+    function fill_pattern_array!()
+        vars = Symbol[]
+        inner = :(addpattern!($out))
+        outer = inner
+        n = length(combinations_arrays)
+
+        for dim = 1:n
+            var = Symbol("c$dim")
+            push!(vars, var)
+            push!(inner.args, var)
+            outer = :(
+                for $var in combinations_arrays[$dim]
+                    $outer
+                end
+            )
+            # println(outer)
+        end
+        # push!(inner.args, :out)
+        return outer
+    end
+    eval(fill_pattern_array!())
+    out_cln = map(remove_empties, out)
+    return out_cln
 end
+
 
 
 combins = gen_combos(res[6][13].patrn)
@@ -315,8 +338,9 @@ push!(combins[1], String[""])
 push!(combins[2], String[""])
 push!(combins[3], String[""])
 
-out = String[]
-eval(nloops_gen4(combins))
+# out = String[]
+# eval(fill_pattern_array!(combins))
+gen_combin_subpatterns(res[6][13].patrn)
 
 w = out[end-1]
 
@@ -343,7 +367,7 @@ function remove_empties(s::String)
         rng = rfind(s, "{}")
         if rng == 0:-1
             persist = false
-        elseif rng ≠ 0:-1 
+        elseif rng ≠ 0:-1
 
             # `{}` found at end of string
             if rng[end] == n
@@ -370,6 +394,6 @@ function remove_empties(s::String)
     end
     s
 end
-
+#
 s1 = "{A} -> {B,C} -> {} -> {D,E,F} -> {}"
 remove_empties(s1)
