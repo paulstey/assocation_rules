@@ -194,7 +194,7 @@ function join_strings(x::Array{String, 1})
     return s
 end
 
-join_strings(["ab", "cd"])
+# join_strings(["ab", "cd"])
 
 
 
@@ -228,8 +228,11 @@ function pattern_string(args...)
     return s
 end
 
-pattern_string(["ab", "cd"], ["de", "fg"])
+# pattern_string(["ab", "cd"], ["de", "fg"])
 
+
+# This is our workhorse used in the nloops_gen()
+# function, which generates n nested loops.
 function addpattern!(v, args...)
     s = pattern_string(args...)
     push!(v, s)
@@ -312,4 +315,61 @@ push!(combins[1], String[""])
 push!(combins[2], String[""])
 push!(combins[3], String[""])
 
-nloops_gen4(combins)
+out = String[]
+eval(nloops_gen4(combins))
+
+w = out[end-1]
+
+function one_set_left(s)
+    idx = search(s, '{')
+    if search(s[(idx+1):end], '{') == 0
+        res = true
+    else
+        res = false
+    end
+    res
+end
+
+
+# Given a string containing a pattern of the
+# form "{A} -> {B,C} -> {} -> {D,E,F} -> {}",
+# this function removes all empty sets `{}`, and
+# would return "{A} -> {B,C} -> {D,E,F}"
+function remove_empties(s::String)
+    n = length(s)
+    persist = true
+
+    while persist
+        rng = rfind(s, "{}")
+        if rng == 0:-1
+            persist = false
+        elseif rng ≠ 0:-1 
+
+            # `{}` found at end of string
+            if rng[end] == n
+                s = s[1:(rng[1] - 5)]
+            # `{}` found in middle of string
+            elseif rng[end] ≠ n
+                s = s[1:(rng[1] - 1)] * s[(rng[end]+5):end]
+            # `{}` found at beginning of string
+            elseif rng[1] == 1
+                s = s[(rng[end]+5):end]
+            end
+        end
+        n = length(s)
+        if n == 0
+            return ""
+        end
+    end
+
+    if one_set_left(s)
+        idx1 = search(s, '{')
+        idx2 = search(s, '}')
+
+        s = s[idx1:idx2]
+    end
+    s
+end
+
+s1 = "{A} -> {B,C} -> {} -> {D,E,F} -> {}"
+remove_empties(s1)
