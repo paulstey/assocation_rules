@@ -388,4 +388,28 @@ function spade(seqs::Array{Sequence, 1}, minsupp = 0.1, max_length = 4)
     return F
 end
 
-#
+
+
+function gen_rules(F::Array{Array{IDList, 1}, 1}, min_conf)
+    supp_count = count_patterns(F)
+    rules = String[]
+
+    # Check the confidence for all sub-patterns
+    # from all of our frequent patterns
+    for k = 1:length(F)
+        for i = 1:length(F[k])
+            sub_patrns = gen_combin_subpatterns(F[k][i].patrn)
+            for s in sub_patrns
+                if s ≠ ""
+                    cnt = get(supp_count, s, 0)
+                    if cnt ≥ min_conf
+                        push!(rules, "$s => $(pattern_string(F[k][i].patrn))")
+                    end
+                end
+            end
+        end
+    end
+    rules
+end
+
+gen_rules(res, 0)

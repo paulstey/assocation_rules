@@ -284,9 +284,7 @@ function subset_pattern(x::Array{Array{Array{String, 1}, 1}, 1})
 end
 
 # combins = gen_combos(res[6][13].patrn)
-#
 # subset_pattern(combins)
-#
 
 
 # Given a frequent pattern (from and IDList), this function returns
@@ -334,15 +332,14 @@ end
 
 combins = gen_combos(res[6][13].patrn)
 
-push!(combins[1], String[""])
-push!(combins[2], String[""])
-push!(combins[3], String[""])
-
+# push!(combins[1], String[""])
+# push!(combins[2], String[""])
+# push!(combins[3], String[""])
+#
 # out = String[]
 # eval(fill_pattern_array!(combins))
 gen_combin_subpatterns(res[6][13].patrn)
 
-w = out[end-1]
 
 function one_set_left(s)
     idx = search(s, '{')
