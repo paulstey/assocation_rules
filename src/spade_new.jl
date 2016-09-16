@@ -402,7 +402,9 @@ function gen_rules(F::Array{Array{IDList, 1}, 1}, min_conf)
             for s in sub_patrns
                 if s ≠ ""
                     cnt = get(supp_count, s, 0)
-                    if cnt ≥ min_conf
+                    conf = isfinite(cnt) ? F[k][i].supp_cnt/cnt : -Inf
+
+                    if conf ≥ min_conf
                         push!(rules, "$s => $(pattern_string(F[k][i].patrn))")
                     end
                 end
