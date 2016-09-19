@@ -30,6 +30,13 @@ type IDList
 end
 
 
+type PrefixNode
+    patrn::String
+    conf::Float64
+    extension_children::Array{PrefixNode, 1}
+end
+
+
 isempty(x::IDList) = isempty(x.sids)
 
 function allempty(x::Array{IDList, 1})
@@ -390,7 +397,7 @@ end
 
 
 
-function gen_rules(F::Array{Array{IDList, 1}, 1}, min_conf)
+function gen_rules1(F::Array{Array{IDList, 1}, 1}, min_conf)
     supp_count = count_patterns(F)
     rules = String[]
 
@@ -414,4 +421,18 @@ function gen_rules(F::Array{Array{IDList, 1}, 1}, min_conf)
     rules
 end
 
-gen_rules(res, 0)
+rules = gen_rules1(res, 0)
+
+#
+# function grow_ptree(node::PrefixNode, F::Array{Array{IDList,1},1}, rules::Array{String,1}, supp_count, min_conf)
+#     cnt = get(supp_count, node.patrn, 0)
+#     conf = isfinite(cnt) ? F[k][i].supp_cnt/cnt : -Inf
+#
+#
+# # Given a single prefix tree node, this function
+# function build_ptree(F::Array{Array{IDList,1},1}, min_conf)
+#     supp_count = count_patterns(F)
+#     root = PrefixNode("{}", 1.0, PrefixNode[])
+#
+#     for k = 1:length(F)
+#         for i = 1:length(F[k])

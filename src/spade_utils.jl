@@ -234,8 +234,8 @@ end
 # pattern_string(["ab", "cd"], ["de", "fg"])
 
 
-# This is our workhorse used in the nloops_gen()
-# function, which generates n nested loops.
+# This is our workhorse used in the nloops_gen(), which
+# is a function that generates n nested loops.
 function addpattern!(v, args...)
     s = pattern_string(args...)
     push!(v, s)
@@ -243,7 +243,8 @@ end
 
 
 
-
+# This function gets the counts for each pattern
+# we have in our frequent-pattern set.
 
 function count_patterns(F::Array{Array{IDList, 1}, 1})
     m = length(F)
@@ -283,8 +284,8 @@ function subset_pattern(x::Array{Array{Array{String, 1}, 1}, 1})
     out
 end
 
-# combins = gen_combos(res[6][13].patrn)
-# subset_pattern(combins)
+combins = gen_combos(res[6][13].patrn)
+subset_pattern(combins)
 
 
 # Given a frequent pattern (from and IDList), this function returns
@@ -330,7 +331,7 @@ end
 
 
 
-combins = gen_combos(res[6][13].patrn)
+# combins = gen_combos(res[6][13].patrn)
 
 # push!(combins[1], String[""])
 # push!(combins[2], String[""])
@@ -338,7 +339,32 @@ combins = gen_combos(res[6][13].patrn)
 #
 # out = String[]
 # eval(fill_pattern_array!(combins))
-gen_combin_subpatterns(res[6][13].patrn)
+# gen_combin_subpatterns(res[6][13].patrn)
+
+
+function sequence_extension(sub_patrn::Array{Array{String,1},1}, uniq_items)
+    new_sub_patrn = copy(sub_patrn)
+
+
+
+function gen_subpatterns(patrn, supp_count)
+    uniq_items = String[]
+
+    for i = 1:length(patrn)
+        for j = 1:length(patrn[i])
+            if patrn[i][j] ∉ uniq_items
+                push!(uniq_items, patrn[i][j])
+            end
+        end
+    end
+
+
+
+
+
+
+
+
 
 
 function one_set_left(s)
