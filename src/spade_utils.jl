@@ -284,8 +284,8 @@ function subset_pattern(x::Array{Array{Array{String, 1}, 1}, 1})
     out
 end
 
-combins = gen_combos(res[6][13].patrn)
-subset_pattern(combins)
+# combins = gen_combos(res[6][13].patrn)
+# subset_pattern(combins)
 
 
 # Given a frequent pattern (from and IDList), this function returns
@@ -340,24 +340,6 @@ end
 # out = String[]
 # eval(fill_pattern_array!(combins))
 # gen_combin_subpatterns(res[6][13].patrn)
-
-
-function sequence_extension(sub_patrn::Array{Array{String,1},1}, uniq_items)
-    new_sub_patrn = copy(sub_patrn)
-
-
-
-function gen_subpatterns(patrn, supp_count)
-    uniq_items = String[]
-
-    for i = 1:length(patrn)
-        for j = 1:length(patrn[i])
-            if patrn[i][j] ∉ uniq_items
-                push!(uniq_items, patrn[i][j])
-            end
-        end
-    end
-
 
 
 
@@ -420,3 +402,50 @@ end
 #
 s1 = "{A} -> {B,C} -> {} -> {D,E,F} -> {}"
 remove_empties(s1)
+
+
+
+
+function sequence_extension(seq::String, uniq_items::Array{String,1})
+    child_seqs = String[]
+    n = length(uniq_items)
+
+    for i = 1:n
+        push!(child_seqs, string(seq, ",{", uniq_items[i], "}"))
+    end
+    child_seqs
+end
+
+
+function item_extension(seq::String, uniq_items::Array{String,1})
+    child_seqs = String[]
+    n = length(uniq_items)
+
+    for i = 1:n
+        push!(child_seqs, string(seq[1:end-1], ",", uniq_items[i], "}"))
+    end
+    child_seqs
+end
+
+sequence_extension("{A}", ["A", "B", "C"])
+item_extension("{A}", ["A", "B", "C"])
+
+sequence_extension(seq::String, item::String) = string(seq[1:end], ",{", item, "}")
+item_extension(seq::String, item::String) = string(seq[1:end-1], ",", item, "}")
+
+sequence_extension("{A}", "B")
+item_extension("{A}", "B")
+
+
+function seq_and_item_extension(seq::String, uniq_items::Array{String,1})
+    child_seqs = String[]
+    n = length(uniq_items)
+
+    for i = 1:n
+        push!(child_seqs, string(seq, ",{", uniq_items[i], "}"))
+        push!(child_seqs, string(seq[1:end-1], ",", uniq_items[i], "}"))
+    end
+    child_seqs
+end
+
+seq_and_item_extension("{A}", ["A", "B", "C"])

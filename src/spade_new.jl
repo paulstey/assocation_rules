@@ -32,8 +32,9 @@ end
 
 type PrefixNode
     patrn::String
-    conf::Float64
-    extension_children::Array{PrefixNode, 1}
+    supp::Int64
+    seq_extension_children::Array{PrefixNode, 1}
+    item_extension_children::Array{PrefixNode, 1}
 end
 
 
@@ -397,6 +398,14 @@ end
 
 
 
+# NOTE: The gen_rules1() function is quite inefficient. In
+# particular, it's runtime is O(n*m*2^k) where k is the number
+# of elements in the pattern, m is the number of patterns for a
+# given pattern length k, and n is the number of different pattern
+# lengths. Additionally, though this corresponds to the pseudocode
+# Zaki provides in his orginal paper, it is not the implementation
+# that appears in the arulesSequence package.
+
 function gen_rules1(F::Array{Array{IDList, 1}, 1}, min_conf)
     supp_count = count_patterns(F)
     rules = String[]
@@ -423,16 +432,51 @@ end
 
 rules = gen_rules1(res, 0)
 
+
+
+# function create_children(node::PrefixNode, uniq_items, supp_count, depth = 1)
+#     children = Array{PrefixNode,1}(0)
+#     for item in uniq_items
+#         patrn1 = sequence_extension(node.patrn, item)
+#         patrn2 = item_extension(node.patrn, item)
 #
-# function grow_ptree(node::PrefixNode, F::Array{Array{IDList,1},1}, rules::Array{String,1}, supp_count, min_conf)
-#     cnt = get(supp_count, node.patrn, 0)
-#     conf = isfinite(cnt) ? F[k][i].supp_cnt/cnt : -Inf
+#         supp1 = get(supp_count, patrn1, 0)
+#         supp2 = get(supp_count, patrn2, 0)
 #
 #
-# # Given a single prefix tree node, this function
-# function build_ptree(F::Array{Array{IDList,1},1}, min_conf)
+#         child1 = PrefixNode(patrn1, supp1)
+#         child2 =
+#         children
+#
+#
+#
+#
+# function gen_rules_from_root!(node::PrefixNode, uniq_items, rules::Array{String,1}, supp_count, min_conf)
+#
+#     for nseq in node.seq_extension_children)
+#         child_patterns = seq_and_item_extension(nseq.patrn, unique_items)
+#
+#         for l in child_patterns
+#
+#
+#
+#
+#             cnt = get(supp_count, node.patrn, 0)
+#             conf = isfinite(cnt) ? F[k][i].supp_cnt/cnt : -Inf
+#
+#
+# function build_ptree(F::Array{Array{IDList,1},1}, min_conf, num_uniq_sids)
 #     supp_count = count_patterns(F)
-#     root = PrefixNode("{}", 1.0, PrefixNode[])
+#     uniq_items = String[]
 #
 #     for k = 1:length(F)
 #         for i = 1:length(F[k])
+#             if F[k][i] ∉ uniq_items
+#                 push!(uniq_items, F[k][i])
+#             end
+#         end
+#     end
+#     node = PrefixNode("{}", num_uniq_sids, uniq_items, uniq_items)
+#     rules = String[]
+#
+#     gen_rules_from_root!(node, F, rules, supp_count, min_conf)
