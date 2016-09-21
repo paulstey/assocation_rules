@@ -31,7 +31,7 @@ end
 
 
 type PrefixNode
-    patrn::String
+    patrn::Array{Array{String,1},1}
     supp::Int64
     seq_extension_children::Array{PrefixNode, 1}
     item_extension_children::Array{PrefixNode, 1}
@@ -188,10 +188,6 @@ function temporal_join(l1, l2, ::Type{Val{:sequence}}, ::Type{Val{:sequence}}, n
     return idlist_arr
 end
 
-# example from Zaki (2001)
-# pa_idlist = IDList("P => A", [1, 1, 1, 4, 7, 8, 8, 8, 8, 13, 13, 15, 17, 20], [20, 30, 40, 60, 40, 10, 30, 50, 80, 50, 70, 60, 20, 10], [["P"], ["A"]], :sequence, ["P", "A"], 20)
-# pf_idlist = IDList("P => F", [1, 1, 3, 5, 8, 8, 8, 8, 11, 13, 16, 20], [70, 80, 10, 70, 30, 40, 50, 80, 30, 10, 80, 20], [["P"], ["F"]], :sequence, ["P", "F"], 20)
-#
 
 
 
@@ -434,49 +430,55 @@ rules = gen_rules1(res, 0)
 
 
 
-# function create_children(node::PrefixNode, uniq_items, supp_count, depth = 1)
-#     children = Array{PrefixNode,1}(0)
-#     for item in uniq_items
-#         patrn1 = sequence_extension(node.patrn, item)
-#         patrn2 = item_extension(node.patrn, item)
-#
-#         supp1 = get(supp_count, patrn1, 0)
-#         supp2 = get(supp_count, patrn2, 0)
-#
-#
-#         child1 = PrefixNode(patrn1, supp1)
-#         child2 =
-#         children
-#
-#
-#
-#
-# function gen_rules_from_root!(node::PrefixNode, uniq_items, rules::Array{String,1}, supp_count, min_conf)
-#
-#     for nseq in node.seq_extension_children)
-#         child_patterns = seq_and_item_extension(nseq.patrn, unique_items)
-#
-#         for l in child_patterns
-#
-#
-#
-#
-#             cnt = get(supp_count, node.patrn, 0)
-#             conf = isfinite(cnt) ? F[k][i].supp_cnt/cnt : -Inf
-#
-#
-# function build_ptree(F::Array{Array{IDList,1},1}, min_conf, num_uniq_sids)
-#     supp_count = count_patterns(F)
-#     uniq_items = String[]
-#
-#     for k = 1:length(F)
-#         for i = 1:length(F[k])
-#             if F[k][i] ∉ uniq_items
-#                 push!(uniq_items, F[k][i])
-#             end
-#         end
-#     end
-#     node = PrefixNode("{}", num_uniq_sids, uniq_items, uniq_items)
-#     rules = String[]
-#
-#     gen_rules_from_root!(node, F, rules, supp_count, min_conf)
+function create_children(patrn::Array{Array{String,1},1}, uniq_items, supp_count, recurse = true)
+    seq_extended_children = Array{PrefixNode,1}(0)
+    item_extended_children = Array{PrefixNode,1}(0)
+
+    if recurse
+        for item in uniq_items
+            seq_extd_patrn = sequence_extension(patrn, item)
+            seq_extd_supp = get(supp_count, pattern_string(seq_extd_patrn), 0)
+
+            item_extd_patrn = item_extension(patrn, item)
+            item_extd_supp = get(supp_count, pattern_string(item_extd_patrn), 0)
+
+            seq_extd_child = PrefixNode(seq_extd_patrn, seq_extd_supp, create_children(seq_extd_patrn, uniq_items, supp_count, false)[1], create_children(seq_extd_patrn, uniq_items, supp_count, false)[2])
+
+            item_extd_child = PrefixNode(item_extd_patrn, item_extd_supp, create_children(item_extd_patrn, uniq_items, supp_count, false)[1], create_children(item_extd_patrn, uniq_items, supp_count, false)[2])
+
+            push!(seq_extension_children, seq_extd_child)
+            push!(item_extension_children, item_extd_child)
+        end
+    end
+
+    return (seq_extended_children, item_extended_children)
+end
+
+
+
+
+
+
+function gen_rules_from_root!(node::PrefixNode, uniq_items, rules::Array{String,1}, supp_count, min_conf)
+
+    for nseq in node.seq_extension_children)
+        child_patterns = seq_and_item_extension(nseq.patrn, unique_items)
+
+        for l in child_patterns
+
+
+function build_ptree(F::Array{Array{IDList,1},1}, min_conf, num_uniq_sids)
+    supp_count = count_patterns(F)
+    uniq_items = String[]
+
+    for k = 1:length(F)
+        for i = 1:length(F[k])
+            if F[k][i] ∉ uniq_items
+                push!(uniq_items, F[k][i])
+            end
+        end
+    end
+    node = PrefixNode("{}", num_uniq_sids, uniq_items, uniq_items)
+    rules = String[]
+
+    gen_rules_from_root!(node, F, rules, supp_count, min_conf)

@@ -21,5 +21,5 @@ s1 <- cspade(x, parameter = list(support = 0.2, maxlen = 10), control = list(ver
 as(s1, "data.frame")
 summary(s1)
 
-r1 <- ruleInduction(s1, confidence = 0.01, support = 0.01)
+r1 <- ruleInduction(s1, confidence = 0.01)
 as(r1, "data.frame")

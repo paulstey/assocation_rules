@@ -288,6 +288,64 @@ end
 # subset_pattern(combins)
 
 
+
+
+function one_set_left(s)
+    idx = search(s, '{')
+    if search(s[(idx+1):end], '{') == 0
+        res = true
+    else
+        res = false
+    end
+    res
+end
+
+
+
+# Given a string containing a pattern of the
+# form "{A} -> {B,C} -> {} -> {D,E,F} -> {}",
+# this function removes all empty sets `{}`, and
+# would return "{A} -> {B,C} -> {D,E,F}"
+function remove_empties(s::String)
+    n = length(s)
+    persist = true
+
+    while persist
+        rng = rfind(s, "{}")
+        if rng == 0:-1
+            persist = false
+        elseif rng ≠ 0:-1
+
+            # `{}` found at end of string
+            if rng[end] == n
+                s = s[1:(rng[1] - 5)]
+            # `{}` found in middle of string
+            elseif rng[end] ≠ n
+                s = s[1:(rng[1] - 1)] * s[(rng[end]+5):end]
+            # `{}` found at beginning of string
+            elseif rng[1] == 1
+                s = s[(rng[end]+5):end]
+            end
+        end
+        n = length(s)
+        if n == 0
+            return ""
+        end
+    end
+
+    if one_set_left(s)
+        idx1 = search(s, '{')
+        idx2 = search(s, '}')
+
+        s = s[idx1:idx2]
+    end
+    s
+end
+#
+s1 = "{A} -> {B,C} -> {} -> {D,E,F} -> {}"
+remove_empties(s1)
+
+
 # Given a frequent pattern (from and IDList), this function returns
 # all the sub-patterns that can be generated that preserve the order.
 # For example, we can generate the sub-pattern {A} -> {B} (and
@@ -343,109 +401,155 @@ end
 
 
 
+# This function performs a sequence extension for patterns in
+# a prefix tree. In essence, we take a single string `s` and
+# append it as an array in the sequence pattern `seq`.
+sequence_extension(seq::Array{Array{String,1},1}, s::String) = [seq; [[s]]]
+
+s1 = [["A"], ["B", "C"]]
+str = "D"
+sequence_extension(s1, str)
 
 
+# Given a sequence pattern in the form of a nested array, `seq`, and
+# a single string, `s`, this function takes `s` and appends it to
+# the last array in the nested array `seq`. Note that this function
+# is a bit messy looking b/c I couldn't get type-inference to work
+# without breaking the steps up a bit. So it goes.
+function item_extension(seq::Array{Array{String,1},1}, s::String)
+    old_last_arr = seq[end]
+    new_last_arr::Array{String,1} = [old_last_arr; s]
 
-
-
-
-function one_set_left(s)
-    idx = search(s, '{')
-    if search(s[(idx+1):end], '{') == 0
-        res = true
-    else
-        res = false
-    end
-    res
+    child_seq = [seq; [sort!(new_last_arr)]]
+    return child_seq
 end
 
+s1 = [["A"], ["B", "C"], ["D"]]
+str = "E"
+item_extension(s1, str)
 
-# Given a string containing a pattern of the
-# form "{A} -> {B,C} -> {} -> {D,E,F} -> {}",
-# this function removes all empty sets `{}`, and
-# would return "{A} -> {B,C} -> {D,E,F}"
-function remove_empties(s::String)
-    n = length(s)
-    persist = true
 
-    while persist
-        rng = rfind(s, "{}")
-        if rng == 0:-1
-            persist = false
-        elseif rng ≠ 0:-1
 
-            # `{}` found at end of string
-            if rng[end] == n
-                s = s[1:(rng[1] - 5)]
-            # `{}` found in middle of string
-            elseif rng[end] ≠ n
-                s = s[1:(rng[1] - 1)] * s[(rng[end]+5):end]
-            # `{}` found at beginning of string
-            elseif rng[1] == 1
-                s = s[(rng[end]+5):end]
-            end
-        end
-        n = length(s)
-        if n == 0
-            return ""
-        end
-    end
 
-    if one_set_left(s)
-        idx1 = search(s, '{')
-        idx2 = search(s, '}')
 
-        s = s[idx1:idx2]
-    end
-    s
-end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###
+# NOTE: These are spare parts from a false start where we
+# considered using strings to represent the patterns in
+# the PrefixNode objects. Now, we use nested arrays, as we
+# did in the IDList object to ensure sortability when inserting.
+###
+
+# function sequence_extension(seq::String, uniq_items::Array{String,1})
+#     child_seqs = String[]
+#     n = length(uniq_items)
 #
-s1 = "{A} -> {B,C} -> {} -> {D,E,F} -> {}"
-remove_empties(s1)
-
-
-
-
-function sequence_extension(seq::String, uniq_items::Array{String,1})
-    child_seqs = String[]
-    n = length(uniq_items)
-
-    for i = 1:n
-        push!(child_seqs, string(seq, ",{", uniq_items[i], "}"))
-    end
-    child_seqs
-end
-
-
-function item_extension(seq::String, uniq_items::Array{String,1})
-    child_seqs = String[]
-    n = length(uniq_items)
-
-    for i = 1:n
-        push!(child_seqs, string(seq[1:end-1], ",", uniq_items[i], "}"))
-    end
-    child_seqs
-end
-
-sequence_extension("{A}", ["A", "B", "C"])
-item_extension("{A}", ["A", "B", "C"])
-
-sequence_extension(seq::String, item::String) = string(seq[1:end], ",{", item, "}")
-item_extension(seq::String, item::String) = string(seq[1:end-1], ",", item, "}")
-
-sequence_extension("{A}", "B")
-item_extension("{A}", "B")
-
-
-function seq_and_item_extension(seq::String, uniq_items::Array{String,1})
-    child_seqs = String[]
-    n = length(uniq_items)
-
-    for i = 1:n
-        push!(child_seqs, string(seq, ",{", uniq_items[i], "}"))
-        push!(child_seqs, string(seq[1:end-1], ",", uniq_items[i], "}"))
-    end
-    child_seqs
-end
-
-seq_and_item_extension("{A}", ["A", "B", "C"])
+#     for i = 1:n
+#         push!(child_seqs, string(seq, ",{", uniq_items[i], "}"))
+#     end
+#     child_seqs
+# end
+#
+#
+# function item_extension(seq::String, uniq_items::Array{String,1})
+#     child_seqs = String[]
+#     n = length(uniq_items)
+#
+#     for i = 1:n
+#         push!(child_seqs, string(seq[1:end-1], ",", uniq_items[i], "}"))
+#     end
+#     child_seqs
+# end
+#
+# sequence_extension("{A}", ["A", "B", "C"])
+# item_extension("{A}", ["A", "B", "C"])
+#
+# sequence_extension(seq::String, item::String) = string(seq[1:end], ",{", item, "}")
+# item_extension(seq::String, item::String) = string(seq[1:end-1], ",", item, "}")
+#
+# sequence_extension("{A}", "B")
+# item_extension("{A}", "B")
+#
+#
+# function seq_and_item_extension(seq::String, uniq_items::Array{String,1})
+#     child_seqs = String[]
+#     n = length(uniq_items)
+#
+#     for i = 1:n
+#         push!(child_seqs, string(seq, ",{", uniq_items[i], "}"))
+#         push!(child_seqs, string(seq[1:end-1], ",", uniq_items[i], "}"))
+#     end
+#     child_seqs
+# end
+#
+# seq_and_item_extension("{A}", ["A", "B", "C"])
+#
+#
+#
+# function extract_postfix(p1::String, p2::String)
+#     last_idx = length(p1)
+#     out = p2[last_idx+5:end]
+#     out
+# end
+#
+#
+#
+# p1 = "{A} -> {BC}"
+# p2 = "{A} -> {BC} -> {D}"
+#
+# extract_postfix(p1, p2)
