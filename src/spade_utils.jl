@@ -432,8 +432,15 @@ item_extension(s1, str)
 
 
 
-
-
+# Given two pattern strings such as "{A,B} -> {C}" and
+# "{A,B} -> {C} -> {D,E}", where one is a subset of the
+# other, this function will extract the postfix from
+# the second string, `p2`. 
+function extract_postfix(p1::String, p2::String)
+    last_idx = length(p1)
+    out = p2[last_idx+5:end]
+    out
+end
 
 
 
@@ -541,11 +548,7 @@ item_extension(s1, str)
 #
 #
 #
-# function extract_postfix(p1::String, p2::String)
-#     last_idx = length(p1)
-#     out = p2[last_idx+5:end]
-#     out
-# end
+
 #
 #
 #
