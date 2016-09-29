@@ -1,3 +1,12 @@
+# NOTE: This is an alternative to the spade.jl implementation. In this
+# version we don't rely on building up the id-list pattern with string
+# concatenation. Instead, we used a vector of vectors (of string), where
+# each nested vector corresponds to a time point. For example, the pattern
+# [["a"], ["b", "c"]] has one item in the first time point and two in the
+# second. So it corresponds to "a => b,c" in our original implementation.
+
+import Base.isempty
+
 
 type Sequence
     sid::Int64                          # sequence ID
@@ -7,15 +16,15 @@ end
 
 
 type IDList
-    pattern::String
+    patrn::Array{Array{String, 1}, 1}   # vector of vectors with the elements in `pattern`
     sids::Array{Int, 1}
     eids::Array{Int, 1}
     typ::Symbol                         # pattern type is `:initial`, `:sequence` or `:event`
-    parents::Array{String, 1}           # just for debugging in the development process
     supp::Float64
+    supp_cnt::Int
 
-    function IDList(pattern, sids, eids, typ, parents, num_sequences)
-        res = new(pattern, sids, eids, typ, parents, length(unique(sids))/num_sequences)
+    function IDList(patrn, sids, eids, typ, num_sequences)
+        res = new(patrn, sids, eids, typ, length(unique(sids))/num_sequences, length(unique(sids)))
         return res
     end
 end
@@ -37,32 +46,26 @@ end
 
 # This function extracts the suffix
 # from the ID list's pattern
-function suffix(idlist::IDList)
-    if idlist.typ == :sequence
-        idx = 1 + rfind(idlist.pattern, " => ")[end]
-        sfix = idlist.pattern[idx:end]
-    elseif idlist.typ == :event
-        idx = 1 + rfind(idlist.pattern, ',')
-        sfix = idlist.pattern[idx:end]
-    elseif idlist.typ == :initial
-        sfix = idlist.pattern
-    end
-    return sfix
-end
-
+suffix(idlist::IDList) = idlist.patrn[end]
 
 
 # This function extracts the prefix
 # from the ID list's pattern
-function prefix(idlist::IDList)
-    if idlist.typ == :sequence
-        idx = first(rfind(idlist.pattern, " => "))
-        pfix = idlist.pattern[1:idx-1]
-    elseif idlist.typ == :event
-        idx  = rfind(idlist.pattern, ',')
-        pfix = idlist.pattern[1:idx-1]
+prefix(idlist::IDList) = prefix(idlist.patrn)
+
+
+function prefix(x::Array{Array{String, 1}, 1})
+    res = x[1:end-1]
+    if length(x[end]) > 1
+        res = [res; [x[end][1:end-1]]]
     end
-    return pfix
+    res                 # returns array of arrays
+end
+
+
+function suffix(x::Array{Array{String, 1}, 1})
+     res = x[end][end]
+     res                # returns a string
 end
 
 
@@ -80,7 +83,7 @@ function first_idlist(seqs::Array{Sequence, 1}, pattern, num_sequences)
             end
         end
     end
-    return IDList(pattern, sids, eids, :initial, [pattern], num_sequences)
+    return IDList([[pattern]], sids, eids, :initial, num_sequences)
 end
 
 
@@ -99,7 +102,9 @@ function equality_join(l1, l2, num_sequences)
             end
         end
     end
-    return IDList(string(l1.pattern, ",", suffix(l2)), sids, eids, :event, [l1.pattern, l2.pattern], num_sequences)
+    pattern::Array{Array{String, 1}, 1} = [l1.patrn[1:end-1]; [sort([l1.patrn[end]; suffix(l2.patrn)])]]
+
+    return IDList(pattern, sids, eids, :event, num_sequences)
 end
 
 
@@ -120,6 +125,8 @@ function already_seen(sid1, eid2, tm_sids, tm_eids)
     return res
 end
 
+# @code_warntype already_seen([1, 1, 1, 2], [10, 15, 20, 10], [1, 2, 3], [10, 20, 15])
+
 
 
 # This function executes a temporal join for those cases
@@ -133,6 +140,7 @@ function temporal_join(l1, l2, ::Type{Val{:sequence}}, ::Type{Val{:sequence}}, n
 
     n = length(l1.sids)
     m = length(l2.sids)
+
     for i = 1:n
         for j = 1:m
             if l1.sids[i] == l2.sids[j]
@@ -143,35 +151,34 @@ function temporal_join(l1, l2, ::Type{Val{:sequence}}, ::Type{Val{:sequence}}, n
                 elseif l2.eids[j] < l1.eids[i] && !already_seen(l2.sids[j], l1.eids[i], sids2, eids2)
                     push!(sids2, l2.sids[j])
                     push!(eids2, l1.eids[i])
-                elseif l1.eids[i] == l2.eids[j] && !already_seen(l1.sids[i], l1.eids[i], sids3, eids3) && suffix(l1) ≠ suffix(l2)
+                elseif l1.eids[i] == l2.eids[j] && !already_seen(l1.sids[i], l1.eids[i], sids3, eids3) && suffix(l1.patrn) ≠ suffix(l2.patrn)
                     push!(sids3, l1.sids[i])
                     push!(eids3, l1.eids[i])
                 end
             end
         end
     end
+    seq_patrn1 = [l1.patrn; [[suffix(l2.patrn)]]]
+    event_patrn::Array{Array{String, 1}, 1} = [l1.patrn[1:end-1]; [sort([l1.patrn[end]; suffix(l2.patrn)])]]
+    seq_patrn2 = [l2.patrn; [[suffix(l1.patrn)]]]
 
-    idlist_arr = IDList[IDList(string(l1.pattern, " => ", suffix(l2)),
+    idlist_arr = IDList[IDList(seq_patrn1,
                                sids1,
                                eids1,
                                :sequence,
-                               [l1.pattern, l2.pattern], num_sequences),
-                        IDList(string(l2.pattern, " => ", suffix(l1)),
+                               num_sequences),
+                        IDList(seq_patrn2,
                                sids2,
                                eids2,
                                :sequence,
-                               [l2.pattern, l1.pattern], num_sequences),
-                        IDList(string(l1.pattern, ",", suffix(l2)),
+                               num_sequences),
+                        IDList(event_patrn,
                                sids3,
                                eids3,
                                :event,
-                               [l1.pattern, l2.pattern], num_sequences)]
+                               num_sequences)]
     return idlist_arr
 end
-
-# example from Zaki (2001)
-pa_idlist = IDList("P => A", [1, 1, 1, 4, 7, 8, 8, 8, 8, 13, 13, 15, 17, 20], [20, 30, 40, 60, 40, 10, 30, 50, 80, 50, 70, 60, 20, 10], :sequence, ["P", "A"], 20)
-pf_idlist = IDList("P => F", [1, 1, 3, 5, 8, 8, 8, 8, 11, 13, 16, 20], [70, 80, 10, 70, 30, 40, 50, 80, 30, 10, 80, 20], :sequence, ["P", "F"], 20)
 
 
 
@@ -193,7 +200,9 @@ function temporal_join(l1, l2, ::Type{Val{:event}}, ::Type{Val{:sequence}}, num_
             end
         end
     end
-    return IDList[IDList(string(l1.pattern, " => ", suffix(l2)), sids, eids, :sequence, [l1.pattern, l2.pattern], num_sequences)]
+    pattern = [l1.patrn; [[suffix(l2.patrn)]]]
+
+    return IDList[IDList(pattern, sids, eids, :sequence, num_sequences)]
 end
 
 
@@ -234,8 +243,11 @@ function first_merge(l1::IDList, l2::IDList, num_sequences, minsupp)
 
     first_merge!(l1, l2, eq_sids, eq_eids, tm_sids, tm_eids)
 
-    event_idlist = IDList(string(l1.pattern, ",", suffix(l2)), eq_sids, eq_eids, :event, [l1.pattern, l2.pattern], num_sequences)
-    seq_idlist = IDList(string(l1.pattern, " => ", suffix(l2)), tm_sids, tm_eids, :sequence, [l1.pattern, l2.pattern], num_sequences)
+    event_patrn = [l1.patrn[1:end-1]; [sort([l1.patrn[end]; suffix(l2.patrn)])]]
+    seq_patrn = [l1.patrn; [[suffix(l2.patrn)]]]
+
+    event_idlist = IDList(event_patrn, eq_sids, eq_eids, :event, num_sequences)
+    seq_idlist = IDList(seq_patrn, tm_sids, tm_eids, :sequence, num_sequences)
 
     merged_idlists = Array{IDList, 1}(0)
 
@@ -262,30 +274,30 @@ end
 
 
 
-s1 = Sequence(
-    1,
-    [1, 2, 3, 4, 5, 6],
-    [["a", "b", "d"], ["a", "e"], ["a", "b", "e"], ["b", "c", "d"], ["b", "c"], ["b", "d"]])
-
-s2 = Sequence(
-    2,
-    [1, 2, 3, 4, 5],
-    [["a", "c", "d"], ["a"], ["a", "b", "d"], ["a", "b"], ["b", "d"]])
-
-
-seq_arr = [s1, s2]
-alist = first_idlist(seq_arr, "a", 2)
-clist = first_idlist(seq_arr, "c", 2)
-dlist = first_idlist(seq_arr, "d", 2)
-
-@code_warntype first_idlist(seq_arr, "d", 2)
-@code_warntype merge_idlists(alist, clist, 2)
-
-cdlist = first_merge(clist, dlist, 2, 0.1)
-adlist = first_merge(alist, dlist, 2, 0.1)
-
-@code_warntype temporal_join(cdlist[1], adlist[1], Val{:sequence}, Val{:sequence})
-
+# s1 = Sequence(
+#     1,
+#     [1, 2, 3, 4, 5, 6],
+#     [["a", "b", "d"], ["a", "e"], ["a", "b", "e"], ["b", "c", "d"], ["b", "c"], ["b", "d"]])
+#
+# s2 = Sequence(
+#     2,
+#     [1, 2, 3, 4, 5],
+#     [["a", "c", "d"], ["a"], ["a", "b", "d"], ["a", "b"], ["b", "d"]])
+#
+# 
+# seq_arr = [s1, s2]
+# alist = first_idlist(seq_arr, "a", 2)
+# clist = first_idlist(seq_arr, "c", 2)
+# dlist = first_idlist(seq_arr, "d", 2)
+#
+# @code_warntype first_idlist(seq_arr, "d", 2)
+#
+# cdlist = first_merge(clist, dlist, 2, 0.1)
+# adlist = first_merge(alist, dlist, 2, 0.1)
+#
+# @code_warntype temporal_join(cdlist[1], adlist[1], Val{:sequence}, Val{:sequence}, 2)
+#
+# @code_warntype equality_join(cdlist[1], adlist[1], 2)
 
 
 
@@ -316,7 +328,7 @@ function spade!(f, F, num_sequences, minsupp)
     end
     if !isempty(f_tmp)
         fk = reduce(vcat, f_tmp)
-        push!(F, fk)
+        push!(F, unique(fk))
     end
 end
 
@@ -359,6 +371,7 @@ function spade(seqs::Array{Sequence, 1}, minsupp = 0.1, max_length = 4)
             end
         end
     end
+    F[2] = unique(F[2])
     i = 3
 
     # We persist until arriving at max_length or
@@ -370,5 +383,3 @@ function spade(seqs::Array{Sequence, 1}, minsupp = 0.1, max_length = 4)
 
     return F
 end
-
-#
