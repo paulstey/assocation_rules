@@ -25,7 +25,7 @@ function make_transactions{T<:AbstractArray}(X::T)
     n, p = size(X)
     X = map(string, X)
 
-    out = Array{Array{Any, 1}, 1}(n)
+    out = Array{Array{String, 1}, 1}(n)
     for i = 1:n
         out[i] = convert(Array{String, 1}, X[i, :])
     end
@@ -160,6 +160,7 @@ end
 
 prettyprint_rulestats(rules[1], 10, 10, 30)
 
+
 function display(rs::Vector{Rule}, colwidth = 30)
     if isempty(rs)
         return nothing
@@ -175,7 +176,9 @@ function display(rs::Vector{Rule}, colwidth = 30)
     maxlen_p = maxlen_p < colwidth ? maxlen_p : colwidth
     maxlen_q = maxlen_q < colwidth ? maxlen_q : colwidth
 
-    println(rpad("lhs", maxlen_p, " "), "    ", rpad("rhs", maxlen_q, " "), " supp.  conf.  lift")
+    colwidth = max(maxlen_p, maxlen_q)
+
+    println(rpad("lhs", colwidth, " "), "    ", rpad("rhs", colwidth, " "), " supp.  conf.  lift")
     for i = 1:n
         prettyprint_rulestats(rs[i], maxlen_p, maxlen_q, colwidth)
     end
