@@ -1,13 +1,20 @@
 
 # testing a-priori algorithm
-l = [sample([1, 2, 3, 4, 5], 5, replace = false) for x in 1:100_000]
-fk = freq_itemsets(l, 0.1)
-rules = apriori(l, 0.1, 0.8, false);
+transactions = [sample(1:10, 5, replace = false) for x in 1:100_000]
+fk = freq_itemsets(transactions, 0.1)
 
+rules1 = apriori(transactions, 0.1, 0.4, false);        # false for only single-item consequents
+diplay(rules1)
+
+# reading data from .csv
+adult_data = readcsv("../data/adult.csv")
+adult_trans = make_transactions(adult_data[1:1000, :])  # take only sub-set of data for convenience
+rules2 = apriori(adult_trans, 0.1, 0.4)
+display(rules2)
 
 # testing SPADE algorithm
-d = readcsv("../data/zaki_data.csv", skipstart = 1)
-seqs = make_sequences(d, 2, 3, 1)
+zaki_data = readcsv("../data/zaki_data.csv", skipstart = 1)
+seqs = make_sequences(zaki_data, 2, 3, 1)
 @time res = spade(seqs, 0.2, 6);
 
 @assert length(res[1]) == 8

@@ -151,13 +151,20 @@ function prettyprint_rulestats(r::Rule, plen, qlen, colwidth)
     q = wrap_line(r.q, colwidth)
     fmt = "%0.4f"
 
+    # print antecedent and consequent
     print_wrapped_lines(p, q, colwidth)
+
+    # print the rule's stats
     println("$(sprintf1(fmt, r.supp)) $(sprintf1(fmt, r.conf)) $(sprintf1(fmt, r.lift))", )
 end
 
-# prettyprint_rulestats(rules[1], 10, 10, 30)
+prettyprint_rulestats(rules[1], 10, 10, 30)
 
 function display(rs::Vector{Rule}, colwidth = 30)
+    if isempty(rs)
+        return nothing
+    end
+
     n = length(rs)
 
     maxlen_p = maximum(map(x -> length(wrap_line(x.p, colwidth)), rs))
