@@ -1,7 +1,5 @@
-# NOTE: This is an alternative to the spade.jl implementation. In this
-# version we don't rely on building up the id-list pattern with string
-# concatenation. Instead, we used a vector of vectors (of string), where
-# each nested vector corresponds to a time point. For example, the pattern
+# NOTE: We use a vector of vectors (of string), to represent sequences with
+# each nested vector corresponding to a time point. For example, the pattern
 # [["a"], ["b", "c"]] has one item in the first time point and two in the
 # second. So it corresponds to "a => b,c" in our original implementation.
 
@@ -284,7 +282,7 @@ end
 #     [1, 2, 3, 4, 5],
 #     [["a", "c", "d"], ["a"], ["a", "b", "d"], ["a", "b"], ["b", "d"]])
 #
-# 
+#
 # seq_arr = [s1, s2]
 # alist = first_idlist(seq_arr, "a", 2)
 # clist = first_idlist(seq_arr, "c", 2)

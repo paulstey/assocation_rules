@@ -420,7 +420,7 @@ function item_extension(seq::Array{Array{String,1},1}, s::String)
     old_last_arr = seq[end]
     new_last_arr::Array{String,1} = [old_last_arr; s]
 
-    child_seq = [seq; [sort!(new_last_arr)]]
+    child_seq = [seq[1:end-1]; [sort!(new_last_arr)]]
     return child_seq
 end
 
