@@ -138,7 +138,7 @@ end
 # T: array of transactions (each is a set)
 # minsup: minimum support
 # NOTE: This function agrees with R
-function freq_itemsets{M}(T::Array{Array{M, 1}, 1}, minsup::Float64)
+function frequent{M}(T::Array{Array{M, 1}, 1}, minsup::Float64)
 
     I = get_unique_items(T)
 
@@ -165,12 +165,12 @@ end
 # v = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4], [1, 4, 5], [3, 4, 5]]
 # v = [[1, 2], [1, 3], [2, 4], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5], [2, 3, 4, 6]]
 # v = [rand([1, 2, 3, 4, 5], 10) for x = 1:1000];
-# @code_warntype freq_itemsets(v, 0.5)
+# @code_warntype frequent(v, 0.5)
 
 
 
 # v = [[1, 2, 3], [1, 2, 3], [1, 2, 3],  [1, 2, 5], [1, 3, 4], [1, 4, 5], [2, 3, 4], [2, 3, 4], [2, 3, 5], [3, 4, 5]]
-# freq_itemsets(v, 0.2)
+# frequent(v, 0.2)
 
 
 
@@ -292,7 +292,7 @@ end
 # v = [[1, 2], [1, 3], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5],
 #      [2, 4, 5, 6], [1, 3, 5, 6], [2, 3, 4, 5, 6], [1, 3, 4, 5, 6], [2, 3, 4, 5, 6]]
 #
-# fr = freq_itemsets(v, 0.2)
+# fr = frequent(v, 0.2)
 # rules = gen_rules(fr, v, 0.1, 0.8, false)
 #
 # display(rules, v)
@@ -308,7 +308,7 @@ end
 # This function has constant memory footprint regardless
 # of the input size of T (for fixed minsupp and minconf)
 function apriori(T, minsupp, minconf, multi_consquents = true)
-    F = freq_itemsets(T, minsupp)
+    F = frequent(T, minsupp)
     R = gen_rules(F, T, minsupp, minconf, multi_consquents)
     return R
 end

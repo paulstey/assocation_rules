@@ -1,13 +1,19 @@
 
 # testing a-priori algorithm
 transactions = [sample(1:10, 5, replace = false) for x in 1:100_000]
-fk = freq_itemsets(transactions, 0.1)
+fk = frequent(transactions, 0.1)
+
+groceries = ["milk", "bread", "eggs", "apples", "oranges", "beer"]
+transactions = [sample(groceries, 4, replace = false) for x in 1:1000]
+fk = frequent(transactions, 0.1)
+
+
 
 rules1 = apriori(transactions, 0.1, 0.4, false);        # false for only single-item consequents
 diplay(rules1)
 
 # reading data from .csv
-adult_data = readcsv("../data/adult.csv")
+adult_data = readcsv("../data/adult.csv", skipstart = 1)
 adult_trans = make_transactions(adult_data[1:1000, :])  # take only sub-set of data for convenience
 rules2 = apriori(adult_trans, 0.1, 0.4)
 display(rules2)

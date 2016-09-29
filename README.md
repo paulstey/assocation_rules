@@ -5,10 +5,10 @@
 
 
 ## Description
-This package implements a few algorithms for association rule mining and sequential pattern mining. In particular, we have currently implemented the _Apriori_ algorithm and the SPADE algorithm. The former is useful for association rule mining (e.g., "market basket" analysis), and the latter is useful for identifying sequential patterns when the data possess a temporal ordering. The algorithms are written in pure Julia.
+This package implements algorithms for association rule mining and sequential pattern mining. In particular, we have currently implemented the _Apriori_ algorithm (Agrawal & Srikant, 1994) and the SPADE algorithm (Zaki, 2001). The former is used for association rule mining (e.g., "market basket" analysis), and the latter is used for identifying sequential patterns when the data possess a temporal ordering. The algorithms are written in pure Julia.
 
 
-Note that a portion of our implementation of the _a_ _priori_ algorithm was adapted from the earlier work of [toddleo](https://github.com/toddleo/ARules.jl).
+Note that a portion of our implementation of the _Apriori_ algorithm was adapted from the earlier work of [toddleo](https://github.com/toddleo/ARules.jl).
 
 
 ## Initial Setup
@@ -19,7 +19,7 @@ Pkg.clone("https://github.com/paulstey/assocation_rules")
 ## Examples
 Several examples below illustrate the use and features of the `apiori()` function and the `spade()` function.
 
-### Example 1 (_Apriori_ algorithm):
+### Ex. 1 (_Apriori_ algorithm):
 Here we are generating association rules using `apriori()` function.
 ```{Julia}
 using AssociationRules
@@ -54,7 +54,7 @@ fk = frequent(transactions, 0.1)
 
 
 
-### Example 2 (_Apriori_ algorithm with tabular data)
+### Ex. 2 (_Apriori_ algorithm with tabular data)
 The more common scenario will be the one in which we start with tabular data from a two-dimensional array or a `DataFrame` object.
 ```{Julia}
 adult = readcsv("adult.csv")
@@ -65,6 +65,20 @@ transactions = make_transactions(adult[1:1000, :])       # use only first 1000 r
 rules = apriori(transactions, 0.1, 0.4)
 ```
 
+
+
+### Ex. 3 (SPADE algorithm with tabular data)
+The more common scenario will be the one in which we start with tabular data from a two-dimensional array or a `DataFrame` object.
+```{Julia}
+zaki_data = readcsv("../data/zaki_data.csv", skipstart = 1)
+
+# convert tabular data
+seqs = make_sequences(zaki_data, 2, 3, 1)
+
+# generate frequent sequential patterns with minimum support of
+# 0.1 and maximum of 6
+res = spade(seqs, 0.2, 6)
+```
 
 ## Current Algorithms
 - _Apriori_ Algortihm (Agrawal & Srikant, 1994)
