@@ -75,8 +75,8 @@ zaki_data = readcsv("../data/zaki_data.csv", skipstart = 1)
 # convert tabular data
 seqs = make_sequences(zaki_data, 2, 3, 1)
 
-# generate frequent sequential patterns with minimum support of
-# 0.1 and maximum of 6
+# generate frequent sequential patterns with minimum
+# support of 0.1 and maximum of 6 elements
 res = spade(seqs, 0.2, 6)
 ```
 

@@ -158,7 +158,7 @@ function prettyprint_rulestats(r::Rule, plen, qlen, colwidth)
     println("$(sprintf1(fmt, r.supp)) $(sprintf1(fmt, r.conf)) $(sprintf1(fmt, r.lift))", )
 end
 
-prettyprint_rulestats(rules[1], 10, 10, 30)
+# prettyprint_rulestats(rules[1], 10, 10, 30)
 
 
 function display(rs::Vector{Rule}, colwidth = 30)
