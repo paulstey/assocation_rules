@@ -10,7 +10,7 @@ fk = frequent(transactions, 0.1)
 
 
 rules1 = apriori(transactions, 0.1, 0.4, false);        # false for only single-item consequents
-diplay(rules1)
+display(rules1)
 
 # reading data from .csv
 adult_data = readcsv("../data/adult.csv", skipstart = 1)
