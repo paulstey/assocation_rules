@@ -22,6 +22,20 @@ type SequenceRule
 end
 
 
+==(x::SequenceRule, y::SequenceRule) = x.rule == y.rule && x.conf == y.conf
+
+function unique(v::Array{SequenceRule, 1})
+    out = Array{SequenceRule, 1}(0)
+    for i = 1:length(v)
+        if !in(v[i], out)
+            push!(out, v[i])
+        end
+    end
+    return out
+end
+
+
+
 
 # NOTE: The gen_rules1() function is quite inefficient. In
 # particular, it's runtime is O(n*m*2^k) where k is the number
@@ -101,12 +115,27 @@ function gen_rules_from_root!(root::PNode, uniq_items, rules::Array{SequenceRule
         if nseq.supp == 0
             continue
         end
+        conf = isfinite(pre_supp) ? nseq.supp/pre_supp : -Inf
+        post_str = pattern_string(nseq.patrn)
+        if conf ≥ min_conf
+            postfix = extract_postfix(pre_str, post_str)
+            new_rule = string(pre_str, " => ", postfix)
+            push!(rules, SequenceRule(new_rule, conf))
+        end
+
+
+
+        
+
         seq_children, itm_children = create_children(nseq, uniq_items, supp_cnt)
         child_nodes = [seq_children; itm_children]
 
         # println(nseq)
 
         for l in child_nodes
+            if l.supp == 0
+                continue
+            end
             conf = isfinite(pre_supp) ? l.supp/pre_supp : -Inf
             post_str = pattern_string(l.patrn)
             if conf ≥ min_conf
@@ -136,12 +165,10 @@ function gen_rules_from_root!(root::PNode, uniq_items, rules::Array{SequenceRule
     end
 end
 
-pn = PNode([String[]], 1)
-
-srules = SequenceRule[]
-gen_rules_from_root!(pn, ["A", "B", "C", "D"], srules, Dict{String, Int}(), 0.1)
-
-
+# pn = PNode([String[]], 1)
+#
+# srules = SequenceRule[]
+# gen_rules_from_root!(pn, ["A", "B", "C", "D"], srules, Dict{String, Int}(), 0.1)
 
 
 
@@ -150,7 +177,9 @@ gen_rules_from_root!(pn, ["A", "B", "C", "D"], srules, Dict{String, Int}(), 0.1)
 
 
 
-function build_ptree(F::Array{Array{IDList,1},1}, min_conf, num_uniq_sids)
+
+
+function build_ptree(F::Array{Array{IDList,1},1}, min_conf)
     supp_cnt = count_patterns(F)
     uniq_items = String[]
 
@@ -175,4 +204,4 @@ function build_ptree(F::Array{Array{IDList,1},1}, min_conf, num_uniq_sids)
     return rules
 end
 
-build_ptree(res, 0.2, 999)
+build_ptree(res, 0.01)
