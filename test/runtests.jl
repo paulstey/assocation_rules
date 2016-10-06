@@ -15,7 +15,7 @@ display(rules1)
 # reading data from .csv
 adult_data = readcsv("../data/adult.csv", skipstart = 1)
 adult_trans = make_transactions(adult_data[1:1000, :])  # take only sub-set of data for convenience
-rules2 = apriori(adult_trans, 0.1, 0.4)
+rules2 = apriori(adult_trans, 0.2, 0.8)
 display(rules2)
 
 # testing SPADE algorithm

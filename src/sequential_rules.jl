@@ -69,9 +69,9 @@ function create_children(node::PNode, uniq_items::Array{String,1}, supp_cnt)
         # println(itm_patrn)
 
         seq_string = pattern_string(seq_patrn)
-        seq_supp = 1 #get(supp_cnt, seq_string, 0)
         itm_string = pattern_string(itm_patrn)
-        itm_supp = 1 #get(supp_cnt, itm_string, 0)
+        seq_supp = get(supp_cnt, seq_string, 0)
+        itm_supp = get(supp_cnt, itm_string, 0)
 
         seq_extd_child = PNode(seq_patrn, seq_supp)
         item_extd_child = PNode(itm_patrn, itm_supp)
@@ -82,8 +82,9 @@ function create_children(node::PNode, uniq_items::Array{String,1}, supp_cnt)
     return (seq_ext_children, item_ext_children)
 end
 
-pn = PNode([["A", "B"], ["C"]], 1)
-create_children(pn, ["A", "B", "C", "D"], Dict{String, Int}())
+# pn = PNode([["A", "B"], ["C"]], 1)
+# create_children(pn, ["A", "B", "C", "D"], Dict{String, Int}())
+
 
 
 
@@ -97,31 +98,40 @@ function gen_rules_from_root!(root::PNode, uniq_items, rules::Array{SequenceRule
     pre_str = pattern_string(pre)
 
     for nseq in seq_ext_children
-        # println(nseq)
+        if nseq.supp == 0
+            continue
+        end
         seq_children, itm_children = create_children(nseq, uniq_items, supp_cnt)
         child_nodes = [seq_children; itm_children]
 
-        # println(child_nodes)
+        # println(nseq)
 
         for l in child_nodes
-
             conf = isfinite(pre_supp) ? l.supp/pre_supp : -Inf
-            println(conf)
             post_str = pattern_string(l.patrn)
             if conf ≥ min_conf
                 postfix = extract_postfix(pre_str, post_str)
                 new_rule = string(pre_str, " => ", postfix)
+                # println(new_rule)
                 push!(rules, SequenceRule(new_rule, conf))
-                println(rules)
+                # println(rules)
+            # else
+            #     break
             end
         end
     end
 
     for nseq in seq_ext_children
+        if nseq.supp == 0
+            continue
+        end
         gen_rules_from_root!(nseq, uniq_items, rules, supp_cnt, min_conf)
     end
 
     for nseq in item_ext_children
+        if nseq.supp == 0
+            continue
+        end
         gen_rules_from_root!(nseq, uniq_items, rules, supp_cnt, min_conf)
     end
 end
@@ -140,18 +150,29 @@ gen_rules_from_root!(pn, ["A", "B", "C", "D"], srules, Dict{String, Int}(), 0.1)
 
 
 
-# function build_ptree(F::Array{Array{IDList,1},1}, min_conf, num_uniq_sids)
-#     supp_cnt = count_patterns(F)
-#     uniq_items = String[]
-#
-#     for k = 1:length(F)
-#         for i = 1:length(F[k])
-#             if F[k][i] ∉ uniq_items
-#                 push!(uniq_items, F[k][i])
-#             end
-#         end
-#     end
-#     node = PrefixNode("{}", num_uniq_sids, uniq_items, uniq_items)
-#     rules = String[]
-#
-#     gen_rules_from_root!(node, F, rules, supp_cnt, min_conf)
+function build_ptree(F::Array{Array{IDList,1},1}, min_conf, num_uniq_sids)
+    supp_cnt = count_patterns(F)
+    uniq_items = String[]
+
+    for k = 1:length(F)
+        for i = 1:length(F[k])
+            for j = 1:length(F[k][i].patrn)
+                for l = 1:length(F[k][i].patrn[j])
+                    if F[k][i].patrn[j][l] ∉ uniq_items
+                        push!(uniq_items, F[k][i].patrn[j][l])
+                    end
+                end
+            end
+        end
+    end
+    rules = SequenceRule[]
+
+    for itm in uniq_items
+        single_item_root = PNode([[itm]], supp_cnt[pattern_string(itm)])
+        gen_rules_from_root!(single_item_root, uniq_items, rules, supp_cnt, min_conf)
+    end
+
+    return rules
+end
+
+build_ptree(res, 0.2, 999)
