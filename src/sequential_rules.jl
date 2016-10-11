@@ -106,12 +106,18 @@ end
 # in IMSR_PreTree paper by Van, Bo, and Le (2014)
 
 function gen_rules_from_root!(root::PNode, uniq_items, rules::Array{SequenceRule,1}, supp_cnt, min_conf)
-    seq_ext_children, item_ext_children = create_children(root, uniq_items, supp_cnt)
     pre = root.patrn
+
+    seq_ext_children, item_ext_children = create_children(root, uniq_items, supp_cnt)
     pre_supp = root.supp
     pre_str = pattern_string(pre)
 
+
+
     for nseq in seq_ext_children
+
+        println(pre_str, " :::: ", pattern_string(nseq.patrn))
+
         if nseq.supp == 0
             continue
         end
@@ -124,11 +130,9 @@ function gen_rules_from_root!(root::PNode, uniq_items, rules::Array{SequenceRule
         end
 
 
-
-        
-
         seq_children, itm_children = create_children(nseq, uniq_items, supp_cnt)
         child_nodes = [seq_children; itm_children]
+
 
         # println(nseq)
 
@@ -147,6 +151,9 @@ function gen_rules_from_root!(root::PNode, uniq_items, rules::Array{SequenceRule
             # else
             #     break
             end
+
+
+            gen_rules_from_root!(l, uniq_items, rules, supp_cnt, min_conf)
         end
     end
 
@@ -175,10 +182,6 @@ end
 
 
 
-
-
-
-
 function build_ptree(F::Array{Array{IDList,1},1}, min_conf)
     supp_cnt = count_patterns(F)
     uniq_items = String[]
@@ -197,11 +200,13 @@ function build_ptree(F::Array{Array{IDList,1},1}, min_conf)
     rules = SequenceRule[]
 
     for itm in uniq_items
+        # treat each single item as its own "root"
         single_item_root = PNode([[itm]], supp_cnt[pattern_string(itm)])
+
         gen_rules_from_root!(single_item_root, uniq_items, rules, supp_cnt, min_conf)
     end
 
     return rules
 end
 
-build_ptree(res, 0.01)
+@time build_ptree(res, 0.01)
