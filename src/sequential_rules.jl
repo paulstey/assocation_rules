@@ -126,6 +126,9 @@ function gen_rules_from_root!(root::PNode, uniq_items, rules::Array{SequenceRule
         if conf ≥ min_conf
             postfix = extract_postfix(pre_str, post_str)
             new_rule = string(pre_str, " => ", postfix)
+
+            println("New rule from outer loop: ", new_rule)
+
             push!(rules, SequenceRule(new_rule, conf))
         end
 
@@ -133,27 +136,25 @@ function gen_rules_from_root!(root::PNode, uniq_items, rules::Array{SequenceRule
         seq_children, itm_children = create_children(nseq, uniq_items, supp_cnt)
         child_nodes = [seq_children; itm_children]
 
-
-        # println(nseq)
-
         for l in child_nodes
             if l.supp == 0
                 continue
             end
             conf = isfinite(pre_supp) ? l.supp/pre_supp : -Inf
             post_str = pattern_string(l.patrn)
+
+            println(pre_str, " ==== ", post_str)
             if conf ≥ min_conf
                 postfix = extract_postfix(pre_str, post_str)
                 new_rule = string(pre_str, " => ", postfix)
-                # println(new_rule)
+
+                println("New rule from inner: ", new_rule)
+
                 push!(rules, SequenceRule(new_rule, conf))
-                # println(rules)
-            # else
-            #     break
             end
 
 
-            gen_rules_from_root!(l, uniq_items, rules, supp_cnt, min_conf)
+            # gen_rules_from_root!(l, uniq_items, rules, supp_cnt, min_conf)
         end
     end
 
@@ -209,4 +210,4 @@ function build_ptree(F::Array{Array{IDList,1},1}, min_conf)
     return rules
 end
 
-@time build_ptree(res, 0.01)
+@time build_ptree(res2, 0.01)

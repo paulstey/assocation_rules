@@ -27,6 +27,13 @@ typedef struct pnode {
 static PN *nq, **nb = NULL;		    // node pointers
 static int npn, cpn, apn;		    // node counters
 
+
+
+// Given a pointer to a prefix node, `p`, this function seems to do
+// two things: First, it deallocates the memory which we allocated
+// for all the node's in this nodes sub-tree. It does this using
+// recursion until it finds a `p` is NULL. Second, it decrements
+// the `apn` node counter.
 static void pnfree(PN *p) {
     if (p == NULL) {
     	return;
@@ -38,11 +45,13 @@ static void pnfree(PN *p) {
     apn--;
 }
 
+
 static void nbfree() {
     pnfree(*nb);
-    free( nb);
+    free(nb);
     nb = NULL;
 }
+
 
 static PN *pnadd(PN *p, int *x, int n) {
     if (n == 0) {
@@ -50,7 +59,7 @@ static PN *pnadd(PN *p, int *x, int n) {
     }
     cpn++;
 
-    if (p == NULL) {			    // append node
+    if (p == NULL) {			            // append node
     	p = nq = (PN *) malloc(sizeof(PN));
     	if (p) {
     	    apn++;
@@ -198,28 +207,27 @@ static void pnscount(PN *p, int *x, int n, PN *q, int r) {
 
 SEXP R_pnscount(SEXP R_x, SEXP R_t, SEXP R_e, SEXP R_v) {
     if (!inherits(R_x, "sgCMatrix"))
-	error("'x' not of class sgCMatrix");
+	   error("'x' not of class sgCMatrix");
     if (!inherits(R_t, "sgCMatrix"))
-	error("'t' not of class sgCMatrix");
-    if (INTEGER(GET_SLOT(R_x, install("Dim")))[0] !=
-	INTEGER(GET_SLOT(R_t, install("Dim")))[0])
-	error("the number of rows of 'x' and 't' do not conform");
+	   error("'t' not of class sgCMatrix");
+    if (INTEGER(GET_SLOT(R_x, install("Dim")))[0] != INTEGER(GET_SLOT(R_t, install("Dim")))[0])
+	   error("the number of rows of 'x' and 't' do not conform");
     if (!isNull(R_e) && !inherits(R_e, "ngCMatrix"))
-	error("e not of class ngCMatrix");
+	   error("e not of class ngCMatrix");
     if (TYPEOF(R_v) != LGLSXP)
-	error("'v' not of type logical");
+	   error("'v' not of type logical");
     int i, f, l, k, n, nr, e;
     int *x;
     SEXP px, ix, pt, it;
     SEXP r;
-#ifdef _TIME_H
-    clock_t t4, t3, t2, t1;
-
-    t1 = clock();
-
-    if (LOGICAL(R_v)[0] == TRUE)
-	Rprintf("preparing ... ");
-#endif
+// #ifdef _TIME_H
+//     clock_t t4, t3, t2, t1;
+//
+//     t1 = clock();
+//
+//     if (LOGICAL(R_v)[0] == TRUE)
+// 	Rprintf("preparing ... ");
+// #endif
 
     nr = INTEGER(GET_SLOT(R_x, install("Dim")))[0];
 
@@ -230,10 +238,10 @@ SEXP R_pnscount(SEXP R_x, SEXP R_t, SEXP R_e, SEXP R_v) {
     it = GET_SLOT(R_t, install("i"));
 
     if (!isNull(R_e)) {
-	if (nr != INTEGER(GET_SLOT(R_e, install("Dim")))[1])
-	    error("the number of rows of 'x' and columns of 'e' do not conform");
-	pe = INTEGER(GET_SLOT(R_e, install("p")));
-	ie = INTEGER(GET_SLOT(R_e, install("i")));
+    	if (nr != INTEGER(GET_SLOT(R_e, install("Dim")))[1])
+    	    error("the number of rows of 'x' and columns of 'e' do not conform");
+    	pe = INTEGER(GET_SLOT(R_e, install("p")));
+    	ie = INTEGER(GET_SLOT(R_e, install("i")));
     }
     else
 	pe = NULL;
@@ -241,15 +249,16 @@ SEXP R_pnscount(SEXP R_x, SEXP R_t, SEXP R_e, SEXP R_v) {
     cpn = apn = npn = 0;
 
     if (nb != NULL)
-	nbfree();
+	   nbfree();
     nb = (PN **) malloc(sizeof(PN *) * (nr+1));
+
     if (nb == NULL)
-	error("pointer array allocation failed");
+	   error("pointer array allocation failed");
 
     k = nr;
     nb[k] = NULL;
     while (k-- > 0)
-	nb[k] = pnadd(nb[k+1], &k, 1);
+	   nb[k] = pnadd(nb[k+1], &k, 1);
 
     if (npn) {
     	nbfree();
@@ -276,40 +285,40 @@ SEXP R_pnscount(SEXP R_x, SEXP R_t, SEXP R_e, SEXP R_v) {
     	R_CheckUserInterrupt();
     }
 
-#ifdef _TIME_H
-    t2 = clock();
-    if (LOGICAL(R_v)[0] == TRUE) {
-	Rprintf("%i sequences, created %i (%.2f) nodes [%.2fs]\n",
-		LENGTH(px) - 1, apn, (double) apn / cpn,
-		((double) t2 - t1) / CLOCKS_PER_SEC);
-	Rprintf("counting ... ");
-    }
-#endif
+// #ifdef _TIME_H
+//     t2 = clock();
+//     if (LOGICAL(R_v)[0] == TRUE) {
+// 	Rprintf("%i sequences, created %i (%.2f) nodes [%.2fs]\n",
+// 		LENGTH(px) - 1, apn, (double) apn / cpn,
+// 		((double) t2 - t1) / CLOCKS_PER_SEC);
+// 	Rprintf("counting ... ");
+//     }
+// #endif
 
     cpn = npn = dpn = tc = 0;
 
     f = 0;
     for (i = 1; i < LENGTH(pt); i++) {
-	l = INTEGER(pt)[i];
-	n = l-f;
-	if (n == 0)
-	    continue;
-	tc++;
-	x = INTEGER(it)+f;
-	pnscount(is_atom(*x) ? nb[*x] : *nb, x, n, *nb, 1);
-	f = l;
-	R_CheckUserInterrupt();
+    	l = INTEGER(pt)[i];
+    	n = l-f;
+    	if (n == 0)
+    	    continue;
+    	tc++;
+    	x = INTEGER(it)+f;
+    	pnscount(is_atom(*x) ? nb[*x] : *nb, x, n, *nb, 1);
+    	f = l;
+    	R_CheckUserInterrupt();
     }
 
-#ifdef _TIME_H
-    t3 = clock();
-    if (LOGICAL(R_v)[0] == TRUE) {
-	Rprintf("%i transactions, processed %i (%.2f, %.2f) nodes [%.2fs]\n",
-		LENGTH(pt) - 1, cpn, (double) dpn / npn, (double) npn / cpn,
-		((double) t3 - t2) / CLOCKS_PER_SEC);
-	Rprintf("writing ... ");
-    }
-#endif
+// #ifdef _TIME_H
+//     t3 = clock();
+//     if (LOGICAL(R_v)[0] == TRUE) {
+// 	Rprintf("%i transactions, processed %i (%.2f, %.2f) nodes [%.2fs]\n",
+// 		LENGTH(pt) - 1, cpn, (double) dpn / npn, (double) npn / cpn,
+// 		((double) t3 - t2) / CLOCKS_PER_SEC);
+// 	Rprintf("writing ... ");
+//     }
+// #endif
 
     PROTECT(r = allocVector(INTSXP, LENGTH(px)-1));
 
@@ -318,32 +327,32 @@ SEXP R_pnscount(SEXP R_x, SEXP R_t, SEXP R_e, SEXP R_v) {
     e = LENGTH(pt) - 1;
     f = 0;
     for (i = 1; i < LENGTH(px); i++) {
-	l = INTEGER(px)[i];
-	n = l-f;
-	if (n == 0) {
-	    INTEGER(r)[i-1] = e;
-	    continue;
-	}
-	x = INTEGER(ix)+f;
-	INTEGER(r)[i-1] = pnget(nb[*x], x, n);
-	f = l;
-	R_CheckUserInterrupt();
+    	l = INTEGER(px)[i];
+    	n = l-f;
+    	if (n == 0) {
+    	    INTEGER(r)[i-1] = e;
+    	    continue;
+	    }
+    	x = INTEGER(ix)+f;
+    	INTEGER(r)[i-1] = pnget(nb[*x], x, n);
+    	f = l;
+    	R_CheckUserInterrupt();
     }
 
     nbfree();
 
     if (apn)
-	error("node deallocation imbalance %i", apn);
+	   error("node deallocation imbalance %i", apn);
 
-#ifdef _TIME_H
-    t4 = clock();
-
-    if (LOGICAL(R_v)[0] == TRUE) {
-	Rprintf("%i counts, ", LENGTH(px)-1);
-	Rprintf("processed %i (%.2f) nodes [%.2fs]\n", cpn, (double) npn / cpn,
-		((double) t4 - t3) / CLOCKS_PER_SEC);
-    }
-#endif
+// #ifdef _TIME_H
+//     t4 = clock();
+//
+//     if (LOGICAL(R_v)[0] == TRUE) {
+//     	Rprintf("%i counts, ", LENGTH(px)-1);
+//     	Rprintf("processed %i (%.2f) nodes [%.2fs]\n", cpn, (double) npn / cpn,
+//     		((double) t4 - t3) / CLOCKS_PER_SEC);
+//     }
+// #endif
 
     UNPROTECT(1);
 
@@ -351,6 +360,12 @@ SEXP R_pnscount(SEXP R_x, SEXP R_t, SEXP R_e, SEXP R_v) {
 }
 
 // fixme: extend to items
+
+
+
+
+// This function is used for support counting in the `support`
+// method of a `sequences` object in R.
 
 SEXP R_pnsindex(SEXP R_x, SEXP R_e, SEXP R_v) {
     if (!inherits(R_x, "sgCMatrix"))
@@ -363,12 +378,14 @@ SEXP R_pnsindex(SEXP R_x, SEXP R_e, SEXP R_v) {
     int *x;
     SEXP px, ix;
     SEXP r, is, ir, il;
-#ifdef _TIME_H
-    clock_t t2, t1 = clock();
 
-    if (LOGICAL(R_v)[0] == TRUE)
-        Rprintf("processing ... ");
-#endif
+// #ifdef _TIME_H
+//     clock_t t2, t1 = clock();
+//
+//     if (LOGICAL(R_v)[0] == TRUE)
+//         Rprintf("processing ... ");
+// #endif
+
     nr = INTEGER(GET_SLOT(R_x, install("Dim")))[0];
 
     px = GET_SLOT(R_x, install("p"));
@@ -412,8 +429,8 @@ SEXP R_pnsindex(SEXP R_x, SEXP R_e, SEXP R_v) {
 	    m++;
 	if (n > k)
 	    k = n;
-        f = l;
-        R_CheckUserInterrupt();
+    f = l;
+    R_CheckUserInterrupt();
     }
 
     PROTECT(r = allocVector(VECSXP, 3));
@@ -427,32 +444,33 @@ SEXP R_pnsindex(SEXP R_x, SEXP R_e, SEXP R_v) {
     m = 0;
 
     f = 0;
+
     for (i = 1; i < LENGTH(px); i++) {
-	l = INTEGER(px)[i];
-	n = l-f;
-	if (n == 0)
-	    continue;
-	if (n > 1) {
-	    x = INTEGER(ix)+f;
-	    INTEGER(is)[m] = i;
-	    INTEGER(il)[m] = pnget(nb[x[0]], x, n-1);
-	    INTEGER(ir)[m] = pnget(nb[x[n-1]], x+n-1, 1);
-	    m++;
-	}
-	f = l;
-	R_CheckUserInterrupt();
+    	l = INTEGER(px)[i];
+    	n = l-f;
+    	if (n == 0)
+    	    continue;
+    	if (n > 1) {
+    	    x = INTEGER(ix)+f;
+    	    INTEGER(is)[m] = i;
+    	    INTEGER(il)[m] = pnget(nb[x[0]], x, n-1);
+    	    INTEGER(ir)[m] = pnget(nb[x[n-1]], x+n-1, 1);
+    	    m++;
+    	}
+    	f = l;
+    	R_CheckUserInterrupt();
     }
 
     nbfree();
 
     if (apn)
         error("node deallocation imbalance %i", apn);
-#ifdef _TIME_H
-    t2 = clock();
-    if (LOGICAL(R_v)[0] == TRUE)
-        Rprintf(" %i itemsets, %i rules [%.2fs]\n", LENGTH(px) - 1, m,
-                ((double) t2-t1) / CLOCKS_PER_SEC);
-#endif
+// #ifdef _TIME_H
+//     t2 = clock();
+//     if (LOGICAL(R_v)[0] == TRUE)
+//         Rprintf(" %i itemsets, %i rules [%.2fs]\n", LENGTH(px) - 1, m,
+//                 ((double) t2-t1) / CLOCKS_PER_SEC);
+// #endif
 
     UNPROTECT(1);
 

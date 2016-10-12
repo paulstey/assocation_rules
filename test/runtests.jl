@@ -26,3 +26,10 @@ seqs = make_sequences(zaki_data, 2, 3, 1)
 @assert length(res[1]) == 8
 @assert length(res[2]) == 57
 @assert length(res[3]) == 191
+
+
+
+# testing SPADE algorithm with subset of Zaki data
+zaki_data = readcsv("../data/zaki_subset_data.csv", skipstart = 1)
+seqs = make_sequences(zaki_data, 2, 3, 1)
+@time res = spade(seqs, 0.2, 6);
