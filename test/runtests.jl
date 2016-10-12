@@ -31,5 +31,5 @@ seqs = make_sequences(zaki_data, 2, 3, 1)
 
 # testing SPADE algorithm with subset of Zaki data
 zaki_data = readcsv("../data/zaki_subset_data.csv", skipstart = 1)
-seqs = make_sequences(zaki_data, 2, 3, 1)
-@time res = spade(seqs, 0.2, 6);
+seqs2 = make_sequences(zaki_data, 2, 3, 1)
+@time res2 = spade(seqs2, 0.2, 6);

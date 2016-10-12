@@ -13,7 +13,7 @@ Note that a portion of our implementation of the _Apriori_ algorithm was adapted
 
 ## Initial Setup
 ```{Julia}
-Pkg.clone("https://github.com/paulstey/assocation_rules")
+Pkg.clone("https://github.com/paulstey/association_rules")
 ```
 
 ## Examples

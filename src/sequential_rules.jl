@@ -179,6 +179,64 @@ end
 # gen_rules_from_root!(pn, ["A", "B", "C", "D"], srules, Dict{String, Int}(), 0.1)
 
 
+function generate_sr_from_tree_root!(sp_root, uniq_items, rules, supp_cnt, min_conf)
+    seq_ext_children, item_ext_children = create_children(sp_root, uniq_items, supp_cnt)
+
+    for pseq in seq_ext_children
+
+        println(pseq)
+
+        seq_children, itm_children = create_children(pseq, uniq_items, supp_cnt)
+        subtree = [seq_children; itm_children]
+
+        generate_sr_from_subtree!(sp_root, subtree, rules, min_conf)
+    end
+    for pitems in item_ext_children
+        if pitems.supp == 0
+            continue
+        end
+        generate_sr_from_tree_root!(pitems, uniq_items, rules, supp_cnt, min_conf)
+    end
+end
+
+
+function generate_sr_from_subtree!(pre, subtree, rules, min_conf)
+    n_pre = pre.supp
+    pre_str = pattern_string(pre.patrn)
+
+    for cn in subtree
+        if cn.supp == 0
+            continue
+        end
+
+        conf = isfinite(pre.supp) ? cn.supp/pre.supp : -Inf
+        sp = pattern_string(cn.patrn)
+
+        post = extract_postfix(pre_str, sp)
+        candidate_rule = string(pre_str, " => ", post)
+        println("Candidate rule: ", candidate_rule)
+
+
+        if conf ≥ min_conf
+            post = extract_postfix(pre_str, sp)
+            new_rule = string(pre_str, " => ", post)
+
+            println("New rule: ", new_rule)
+
+            push!(rules, SequenceRule(new_rule, conf))
+        end
+    end
+end
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -204,7 +262,10 @@ function build_ptree(F::Array{Array{IDList,1},1}, min_conf)
         # treat each single item as its own "root"
         single_item_root = PNode([[itm]], supp_cnt[pattern_string(itm)])
 
-        gen_rules_from_root!(single_item_root, uniq_items, rules, supp_cnt, min_conf)
+        warn("Single item root: $itm")
+
+        # gen_rules_from_root!(single_item_root, uniq_items, rules, supp_cnt, min_conf)
+        generate_sr_from_tree_root!(single_item_root, uniq_items, rules, supp_cnt, min_conf)
     end
 
     return rules

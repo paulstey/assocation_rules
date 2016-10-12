@@ -444,7 +444,7 @@ function extract_postfix(p1::String, p2::String)
     out
 end
 
-
+# extract_postfix("{A,B} -> {C}", "{A,B} -> {C} -> {D,E}")
 
 
 
