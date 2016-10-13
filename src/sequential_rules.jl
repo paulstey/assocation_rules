@@ -5,8 +5,12 @@
 type PrefixNode
     patrn::Array{Array{String,1},1}
     supp::Int64
+    parent::PrefixNode
+
     seq_extension_children::Array{PrefixNode, 1}
     item_extension_children::Array{PrefixNode, 1}
+
+    PrefixNode(patrn, supp, parent) = new(patrn, supp, parent)      # incomplete initialization
 end
 
 
@@ -187,8 +191,10 @@ function generate_sr_from_tree_root!(sp_root, uniq_items, rules, supp_cnt, min_c
         println(pseq)
 
         seq_children, itm_children = create_children(pseq, uniq_items, supp_cnt)
-        subtree = [seq_children; itm_children]
-
+        subtree = [sp_root; pseq; seq_children; itm_children]
+        for x in subtree
+            println(x)
+        end
         generate_sr_from_subtree!(sp_root, subtree, rules, min_conf)
     end
     for pitems in item_ext_children
@@ -205,17 +211,12 @@ function generate_sr_from_subtree!(pre, subtree, rules, min_conf)
     pre_str = pattern_string(pre.patrn)
 
     for cn in subtree
-        if cn.supp == 0
-            continue
-        end
+        # if cn.supp == 0
+        #     continue
+        # end
 
         conf = isfinite(pre.supp) ? cn.supp/pre.supp : -Inf
         sp = pattern_string(cn.patrn)
-
-        post = extract_postfix(pre_str, sp)
-        candidate_rule = string(pre_str, " => ", post)
-        println("Candidate rule: ", candidate_rule)
-
 
         if conf ≥ min_conf
             post = extract_postfix(pre_str, sp)
@@ -227,17 +228,6 @@ function generate_sr_from_subtree!(pre, subtree, rules, min_conf)
         end
     end
 end
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -272,3 +262,103 @@ function build_ptree(F::Array{Array{IDList,1},1}, min_conf)
 end
 
 @time build_ptree(res2, 0.01)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function build_prefix_tree(F::Array{Array{IDList,1},1}, min_conf)
+    supp_cnt = count_patterns(F)
+    uniq_items = String[]
+
+    for k = 1:length(F)
+        for i = 1:length(F[k])
+            for j = 1:length(F[k][i].patrn)
+                for l = 1:length(F[k][i].patrn[j])
+                    if F[k][i].patrn[j][l] ∉ uniq_items
+                        push!(uniq_items, F[k][i].patrn[j][l])
+                    end
+                end
+            end
+        end
+    end
+    rules = SequenceRule[]
+
+    for itm in uniq_items
+        # treat each single item as its own "root"
+        single_item_root = PrefixNode([[itm]], supp_cnt[pattern_string(itm)], [[""]])
+
+        warn("Single item root: $itm")
+
+        # gen_rules_from_root!(single_item_root, uniq_items, rules, supp_cnt, min_conf)
+        generate_sr_from_tree_root2!(single_item_root, uniq_items, rules, supp_cnt, min_conf)
+    end
+
+    return rules
+end
+
+
+
+# Pseudo code for generating a prefix tree
+# (1) Given a node (root or otherwise), generate its sequence-extended children and item-extended children.
+# (2) For all sequence-extended children from (1)
+
+function create_children2(node::Array{Array{String,1},1}, uniq_items::Array{String,1})
+    seq_ext_children = Array{Array{Array{String,1},1},1}(0)
+    item_ext_children = Array{Array{Array{String,1},1},1}(0)
+
+    for item in uniq_items
+        seq_patrn = sequence_extension(node, item)
+        itm_patrn = item_extension(node, item)
+
+        ## computing support
+        # seq_string = pattern_string(seq_patrn)
+        # itm_string = pattern_string(itm_patrn)
+        # seq_supp = get(supp_cnt, seq_string, 0)
+        # itm_supp = get(supp_cnt, itm_string, 0)
+
+        # seq_extd_child = PNode(seq_patrn, seq_supp)
+        # item_extd_child = PNode(itm_patrn, itm_supp)
+
+        push!(seq_ext_children, seq_patrn)
+        push!(item_ext_children, itm_patrn)
+    end
+    return (seq_ext_children, item_ext_children)
+end
+
+
+function grow_tree!(root, tree, uniq_items, depth = 0, maxdepth = 1)
+    seq_ext_children, item_ext_children = create_children2(root, uniq_items)
+
+    children = [seq_ext_children; item_ext_children]
+
+    for child in children
+        push!(tree, child)
+
+        if depth+1 < maxdepth
+            grow_tree!(child, tree, uniq_items, depth+1, maxdepth)
+        end
+    end
+end 
+
+function build_tree(uniq_items, maxdepth)
+    tree = []
+    for itm in uniq_items
+        push!(tree, [[itm]])
+        grow_tree!([[itm]], tree, uniq_items, 0, maxdepth)
+    end
+    tree
+end
+
+build_tree(["A", "B", "C"], 2)
