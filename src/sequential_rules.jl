@@ -191,7 +191,7 @@ function generate_sr_from_tree_root!(sp_root, uniq_items, rules, supp_cnt, min_c
         println(pseq)
 
         seq_children, itm_children = create_children(pseq, uniq_items, supp_cnt)
-        subtree = [sp_root; pseq; seq_children; itm_children]
+        subtree = [pseq; seq_children; itm_children]
         for x in subtree
             println(x)
         end
@@ -261,7 +261,7 @@ function build_ptree(F::Array{Array{IDList,1},1}, min_conf)
     return rules
 end
 
-@time build_ptree(res2, 0.01)
+# @time build_ptree(res2, 0.01)
 
 
 
@@ -338,7 +338,7 @@ function create_children2(node::Array{Array{String,1},1}, uniq_items::Array{Stri
 end
 
 
-function grow_tree!(root, tree, uniq_items, depth = 0, maxdepth = 1)
+function growtree!(root, tree, uniq_items, depth = 0, maxdepth = 1)
     seq_ext_children, item_ext_children = create_children2(root, uniq_items)
 
     children = [seq_ext_children; item_ext_children]
@@ -347,7 +347,7 @@ function grow_tree!(root, tree, uniq_items, depth = 0, maxdepth = 1)
         push!(tree, child)
 
         if depth+1 < maxdepth
-            grow_tree!(child, tree, uniq_items, depth+1, maxdepth)
+            growtree!(child, tree, uniq_items, depth+1, maxdepth)
         end
     end
 end
@@ -357,7 +357,7 @@ function build_tree(uniq_items, maxdepth)
     tree = []
     for itm in uniq_items
         push!(tree, [[itm]])
-        grow_tree!([[itm]], tree, uniq_items, 1, maxdepth)
+        growtree!([[itm]], tree, uniq_items, 1, maxdepth)
     end
     tree
 end
@@ -374,60 +374,111 @@ build_tree(["A", "B", "C"], 2)
 
 type PreNode
     pattern::Array{Array{String,1},1}
-    parent::PreNode
+    # parent::PreNode
     seq_ext_children::Array{PreNode,1}
     item_ext_children::Array{PreNode,1}
+    support::Int64
 
-    PreNode(pattern, parent) = new(pattern, parent)
+    PreNode(pattern) = new(pattern)
 end
 
 
-function create_children3(node::PreNode, uniq_items::Array{String,1})
-    seq_ext_children = Array{Array{Array{String,1},1},1}(0)
-    item_ext_children = Array{Array{Array{String,1},1},1}(0)
+function create_children3(node::PreNode, uniq_items::Array{String,1}, supp_cnt)
+    seq_ext_children = Array{PreNode,1}(0)
+    item_ext_children = Array{PreNode,1}(0)
 
     for item in uniq_items
-        seq_patrn = sequence_extension(node, item)
-        itm_patrn = item_extension(node, item)
+        seq_patrn = sequence_extension(node.pattern, item)
 
         ## computing support
-        # seq_string = pattern_string(seq_patrn)
-        # itm_string = pattern_string(itm_patrn)
-        # seq_supp = get(supp_cnt, seq_string, 0)
-        # itm_supp = get(supp_cnt, itm_string, 0)
+        seq_string = pattern_string(seq_patrn)
+        seq_supp = get(supp_cnt, seq_string, 0)
 
-        seq_extd_child = PreNode(seq_patrn, node)
-        item_extd_child = PreNode(itm_patrn, node)
+        # only append children with non-zero support
+        if seq_supp > 0
+            seq_extd_child = PreNode(seq_patrn)
+            seq_extd_child.support = seq_supp
+            push!(seq_ext_children, seq_extd_child)
+        end
 
-        push!(seq_ext_children, seq_patrn)
-        push!(item_ext_children, itm_patrn)
+        # seq_extd_child.parent = node
+        # item_extd_child.parent = node
+
+
+        itm_patrn = item_extension(node.pattern, item)
+        itm_string = pattern_string(itm_patrn)
+        itm_supp = get(supp_cnt, itm_string, 0)
+
+        # We only create an item-extended child if this item
+        # doesn't already appear in the last array of our our
+        # parent (i.e., `node`). Otherwise, we would either be
+        # duplicating an entry in the last array, or be making
+        # an exact duplicate of our parent (assuming we only allow
+        # unique entries in the pattern's arrays).
+        if itm_supp > 0 && item ∉ node.pattern[end]
+
+            item_extd_child = PreNode(itm_patrn)
+            item_extd_child.support = itm_supp
+            push!(item_ext_children, item_extd_child)
+        end
     end
     return (seq_ext_children, item_ext_children)
 end
 
 
-function grow_tree!(root, tree, uniq_items, depth = 0, maxdepth = 1)
-    root.seq_ext_children, root.item_ext_children = create_children2(root, uniq_items)
+function growtree!(root, uniq_items, supp_cnt, depth = 0, maxdepth = 1)
 
-    children = [root.seq_ext_children; root.item_ext_children]
+    root.seq_ext_children, root.item_ext_children = create_children3(root, uniq_items, supp_cnt)
 
-    for child in children
-        push!(tree, child)
+    allchildren = [root.seq_ext_children; root.item_ext_children]
+
+    for child in allchildren
+        # push!(tree, child)
 
         if depth+1 < maxdepth
-            grow_tree!(child, tree, uniq_items, depth+1, maxdepth)
+            growtree!(child, uniq_items, supp_cnt, depth+1, maxdepth)
         end
     end
 end
 
 
-function build_tree(uniq_items, maxdepth)
-    tree = []
-    for itm in uniq_items
-        push!(tree, [[itm]])
-        grow_tree!([[itm]], tree, uniq_items, 1, maxdepth)
+function build_tree(F::Array{Array{IDList,1},1}, maxdepth)
+    supp_cnt = count_patterns(F)
+    uniq_items = String[]
+
+    for k = 1:length(F)
+        for i = 1:length(F[k])
+            for j = 1:length(F[k][i].patrn)
+                for l = 1:length(F[k][i].patrn[j])
+                    if F[k][i].patrn[j][l] ∉ uniq_items
+                        push!(uniq_items, F[k][i].patrn[j][l])
+                    end
+                end
+            end
+        end
     end
-    tree
+    rules = SequenceRule[]
+
+    root = PreNode([[""]])
+    root.seq_ext_children = PreNode[]
+    for itm in uniq_items
+        child_node1 = PreNode([[itm]])
+        push!(root.seq_ext_children, child_node1)
+        growtree!(child_node1, uniq_items, supp_cnt, 1, maxdepth)
+    end
+    root
 end
 
-build_tree(["A", "B", "C"], 2)
+# build_tree(res2, 5)
+
+
+function children(node::PreNode, child_type = "all")
+    if child_type == "sequence"
+        res = node.seq_ext_children
+    elseif child_type == "item"
+        res = node.item_ext_children
+    elseif child_type == "all"
+        res = [node.seq_ext_children; node.item_ext_children]
+    end
+    return res
+end
