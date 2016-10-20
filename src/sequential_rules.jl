@@ -427,9 +427,7 @@ end
 
 
 function growtree!(root, uniq_items, supp_cnt, depth = 0, maxdepth = 1)
-
     root.seq_ext_children, root.item_ext_children = create_children3(root, uniq_items, supp_cnt)
-
     allchildren = [root.seq_ext_children; root.item_ext_children]
 
     for child in allchildren
@@ -469,7 +467,32 @@ function build_tree(F::Array{Array{IDList,1},1}, maxdepth)
     root
 end
 
-# build_tree(res2, 5)
+# build_tree(res2, 2)
+
+
+
+
+
+function generate_sr_from_tree_root!(sp_root::PreNode)
+    for pseq in sp_root.seq_ext_children
+        subtree = pseq
+        generate_sr_from_subtree!(sp_root, subtree)
+    end
+
+    for pitems in sp_root.item_ext_children
+        generate_sr_from_tree_root!(pitems)
+    end
+end
+
+
+function generate_sr_from_subtree(pre, subtree)
+    0
+end
+
+
+
+
+
 
 
 function children(node::PreNode, child_type = "all")
