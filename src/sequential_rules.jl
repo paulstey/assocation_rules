@@ -568,6 +568,7 @@ end
 
 function generate_sr_from_subtree!(pre, seq_child, rules, min_conf)
     conf = seq_child.support/pre.support
+
     if conf ≥ min_conf
         post = postfix(pre.pattern, seq_child.pattern)
         push!(rules, SeqRule(pre.pattern, post, conf))
@@ -601,6 +602,7 @@ end
 
 
 
+t = build_tree(res, 6)
 
 xrules = []
 generate_sr_from_tree_root!(t.seq_ext_children[1], xrules, 0.01)
@@ -617,7 +619,7 @@ function sequential_rules(F, min_conf, maxdepth = 10)
     rules
 end
 
-sequential_rules(res2, 0.01)
+sequential_rules(res, 0.01)
 
 
 
