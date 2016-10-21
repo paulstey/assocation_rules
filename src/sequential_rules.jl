@@ -40,6 +40,19 @@ end
 
 
 
+==(x::SeqRule, y::SeqRule) = x.prefix == y.prefix && x.postfix == y.postfix && x.conf == y.conf
+
+function unique(v::Array{SeqRule, 1})
+    out = Array{SeqRule, 1}(0)
+    for i = 1:length(v)
+        if !in(v[i], out)
+            push!(out, v[i])
+        end
+    end
+    return out
+end
+
+
 
 # NOTE: The gen_rules1() function is quite inefficient. In
 # particular, it's runtime is O(n*m*2^k) where k is the number
@@ -444,6 +457,9 @@ function build_tree(F::Array{Array{IDList,1},1}, maxdepth)
     supp_cnt = count_patterns(F)
     uniq_items = String[]
 
+    # NOTE: This loop is an embarassment. This is all to get the unique items
+    # from the frequent sequences. The same unique item vector is created by
+    # the spade() function. It should be passed to here.
     for k = 1:length(F)
         for i = 1:length(F[k])
             for j = 1:length(F[k][i].patrn)
@@ -455,39 +471,153 @@ function build_tree(F::Array{Array{IDList,1},1}, maxdepth)
             end
         end
     end
-    rules = SequenceRule[]
 
+    rules = SequenceRule[]
     root = PreNode([[""]])
     root.seq_ext_children = PreNode[]
+
     for itm in uniq_items
         child_node1 = PreNode([[itm]])
+        child_node1.support = supp_cnt[pattern_string(itm)]
         push!(root.seq_ext_children, child_node1)
         growtree!(child_node1, uniq_items, supp_cnt, 1, maxdepth)
     end
-    root
+    return root
 end
 
-# build_tree(res2, 2)
+t = build_tree(res2, 6)
+
+
+
+
+type SeqRule
+    prefix::Array{Array{String,1},1}
+    postfix::Array{Array{String,1},1}
+    conf::Float64
+end
+
+
+
+a = [["a"], ["b"]]
+b = [["a"], ["b"], ["cd"], ["e"]]
+
+function postfix(root, descendant)
+    post = Array{Array{String,1},1}(0)
+    n = length(root)
+    m = length(descendant)
+    i = 1
+
+    while i ≤ n
+        if root[i] == descendant[i]
+            i += 1
+        else
+            error("Prefix of root doesn't matach descendant")
+        end
+    end
+    for j = i:m
+        push!(post, descendant[j])
+    end
+    post
+end
+
+postfix(a, b)
 
 
 
 
 
-function generate_sr_from_tree_root!(sp_root::PreNode)
-    for pseq in sp_root.seq_ext_children
-        subtree = pseq
-        generate_sr_from_subtree!(sp_root, subtree)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function generate_sr_from_tree_root!(sp_root::PreNode, rules, min_conf)
+    if isdefined(sp_root, :seq_ext_children)
+        for seq_child in sp_root.seq_ext_children
+            # println(seq_child)
+
+            generate_sr_from_subtree!(sp_root, seq_child, rules, min_conf)
+        end
     end
 
-    for pitems in sp_root.item_ext_children
-        generate_sr_from_tree_root!(pitems)
+    if isdefined(sp_root, :item_ext_children)
+        for itm_child in sp_root.item_ext_children
+            generate_sr_from_tree_root!(itm_child, rules, min_conf)
+        end
     end
 end
 
 
-function generate_sr_from_subtree(pre, subtree)
-    0
+function generate_sr_from_subtree!(pre, seq_child, rules, min_conf)
+    conf = seq_child.support/pre.support
+    if conf ≥ min_conf
+        post = postfix(pre.pattern, seq_child.pattern)
+        push!(rules, SeqRule(pre.pattern, post, conf))
+
+        if isdefined(seq_child, :seq_ext_children)
+            if !isempty(seq_child.seq_ext_children)
+                for grandchild in seq_child.seq_ext_children
+                    generate_sr_from_subtree!(pre, grandchild, rules, min_conf)
+                end
+            end
+        end
+
+        # display(seq_child)
+        if isdefined(seq_child, :item_ext_children)
+            if !isempty(seq_child.item_ext_children)
+                for grandchild in seq_child.item_ext_children
+                    generate_sr_from_subtree!(pre, grandchild, rules, min_conf)
+                end
+            end
+        end
+    end
 end
+
+
+
+
+
+
+
+
+
+
+
+
+xrules = []
+generate_sr_from_tree_root!(t.seq_ext_children[1], xrules, 0.01)
+
+
+function sequential_rules(F, min_conf, maxdepth = 10)
+    root = build_tree(F, maxdepth)
+
+    rules = Array{SeqRule,1}(0)
+
+    for i = 1:length(root.seq_ext_children)
+        generate_sr_from_tree_root!(root.seq_ext_children[i], rules, min_conf)
+    end
+    rules
+end
+
+sequential_rules(res2, 0.01)
 
 
 
