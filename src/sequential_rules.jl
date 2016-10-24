@@ -574,10 +574,16 @@ function generate_sr_from_subtree!(pre, seq_child, rules, min_conf, one_elem_con
         post = postfix(pre.pattern, seq_child.pattern)
         if one_elem_consq
             if length(post) == 1
-                push!(rules, SeqRule(pre.pattern, post, conf))
+                new_rule = SeqRule(pre.pattern, post, conf)
+                if new_rule ∉ rules
+                    push!(rules, new_rule)
+                end
             end
         elseif !one_elem_consq
-            push!(rules, SeqRule(pre.pattern, post, conf))
+            new_rule = SeqRule(pre.pattern, post, conf)
+            if new_rule ∉ rules
+                push!(rules, new_rule)
+            end
         end
 
 
