@@ -39,6 +39,12 @@ function unique(v::Array{SequenceRule, 1})
 end
 
 
+type SeqRule
+    prefix::Array{Array{String,1},1}
+    postfix::Array{Array{String,1},1}
+    conf::Float64
+end
+
 
 ==(x::SeqRule, y::SeqRule) = x.prefix == y.prefix && x.postfix == y.postfix && x.conf == y.conf
 
@@ -490,11 +496,6 @@ t = build_tree(res2, 6)
 
 
 
-type SeqRule
-    prefix::Array{Array{String,1},1}
-    postfix::Array{Array{String,1},1}
-    conf::Float64
-end
 
 
 
@@ -566,16 +567,31 @@ function generate_sr_from_tree_root!(sp_root::PreNode, rules, min_conf)
 end
 
 
-function generate_sr_from_subtree!(pre, seq_child, rules, min_conf)
+function generate_sr_from_subtree!(pre, seq_child, rules, min_conf, one_elem_consq = true)
     conf = seq_child.support/pre.support
 
     if conf ≥ min_conf
         post = postfix(pre.pattern, seq_child.pattern)
-        push!(rules, SeqRule(pre.pattern, post, conf))
+        if one_elem_consq
+            if length(post) == 1
+                push!(rules, SeqRule(pre.pattern, post, conf))
+            end
+        elseif !one_elem_consq
+            push!(rules, SeqRule(pre.pattern, post, conf))
+        end
+
+
 
         if isdefined(seq_child, :seq_ext_children)
             if !isempty(seq_child.seq_ext_children)
+
+
                 for grandchild in seq_child.seq_ext_children
+
+                    # adding this very speculative (and based on a guess)
+                    generate_sr_from_subtree!(seq_child, grandchild, rules, min_conf)
+
+
                     generate_sr_from_subtree!(pre, grandchild, rules, min_conf)
                 end
             end
@@ -602,13 +618,13 @@ end
 
 
 
-t = build_tree(res, 6)
+t = build_tree(res, 10)
 
 xrules = []
 generate_sr_from_tree_root!(t.seq_ext_children[1], xrules, 0.01)
 
 
-function sequential_rules(F, min_conf, maxdepth = 10)
+function sequential_rules(F, min_conf, maxdepth = 15)
     root = build_tree(F, maxdepth)
 
     rules = Array{SeqRule,1}(0)
@@ -619,10 +635,84 @@ function sequential_rules(F, min_conf, maxdepth = 10)
     rules
 end
 
-sequential_rules(res, 0.01)
+sr = sequential_rules(res, 0.01)
+
+
+# In order to see why the above sequential_rules() function generates
+# fewer rules than R, we will convert our output to match R's and then
+# do a set difference on the string vectors to see what we aren't getting.
+
+function as_set_string(vect::Vector)
+    out = "{"
+    n = length(vect)
+    for (i, x) in enumerate(vect)
+        out *= x
+        if i ≠ n
+            out *= ","
+        end
+        if i == n
+            out *= "}"
+        end
+    end
+    out
+end
 
 
 
+function as_r_string(r::SeqRule)
+    out = "<"
+    n = length(r.prefix)
+    for (i, timepoint) in enumerate(r.prefix)
+        out *= as_set_string(timepoint)
+        if i ≠ n
+            out *= ","
+        end
+        if i == n
+            out *= ">"
+        end
+    end
+    out *= " => <"
+
+    m = length(r.postfix)
+    for (i, timepoint) in enumerate(r.postfix)
+        out *= as_set_string(timepoint)
+        if i ≠ m
+            out *= ","
+        end
+        if i == m
+            out *= ">"
+        end
+    end
+    out
+end
+
+
+function as_r_string(seq::Array{Array{String,1},1})
+    out = "<"
+    n = length(seq)
+    for (i, timepoint) in enumerate(seq)
+        out *= as_set_string(timepoint)
+        if i ≠ n
+            out *= ","
+        end
+        if i == n
+            out *= ">"
+        end
+    end
+    out
+end
+
+
+function rules_to_dataframe(rules::Array{SeqRule,1})
+    df = DataFrame()
+    n = length(rules)
+
+    df[:rules] = Array{String,1}(n)
+    for i = 1:n
+        df[i, :rules] = as_r_string(rules[i])
+    end
+    df
+end
 
 
 
