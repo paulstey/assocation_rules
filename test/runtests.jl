@@ -37,3 +37,6 @@ seqs2 = make_sequences(zaki_data, 2, 3, 1)
 # test sequential-rule building algorithm
 seqrules = sequential_rules(res, 0.01)
 @assert length(seqrules) == 3886
+
+seqrules2 = sequential_rules(res2, 0.01)
+@assert length(seqrules2) == 28
