@@ -393,17 +393,20 @@ SEXP R_pnsindex(SEXP R_x, SEXP R_e, SEXP R_v) {
 
     cpn = apn = npn = 0;
 
-    if (nb != NULL)
+    if (nb != NULL) {
         nbfree();
+    }
     nb = (PN **) malloc(sizeof(PN *) * (nr+1));
-    if (nb == NULL)
-        error("pointer array allocation failed");
 
+    if (nb == NULL) {
+        error("pointer array allocation failed");
+    }
     k = nr;
     nb[k] = NULL;
-    while (k-- > 0)
-        nb[k] = pnadd(nb[k+1], &k, 1);
 
+    while (k-- > 0) {
+        nb[k] = pnadd(nb[k+1], &k, 1);
+    }
     if (npn) {
         nbfree();
         error("node allocation failed");
@@ -423,14 +426,15 @@ SEXP R_pnsindex(SEXP R_x, SEXP R_e, SEXP R_v) {
             nbfree();
             error("node allocation failed");
         }
-	if (nq->count == 0)
-            nq->count = i;
-	if (n > 1)
-	    m++;
-	if (n > k)
-	    k = n;
-    f = l;
-    R_CheckUserInterrupt();
+
+    	if (nq->count == 0)
+                nq->count = i;
+    	if (n > 1)
+    	    m++;
+    	if (n > k)
+    	    k = n;
+        f = l;
+        R_CheckUserInterrupt();
     }
 
     PROTECT(r = allocVector(VECSXP, 3));

@@ -272,6 +272,17 @@ setMethod("show", signature(object = "summary.sequencerules"),
     }
 )
 
+
+
+
+
+
+
+
+
+
+
+
 ## induce sequential rules, i.e. rules of the form
 ## <A1, A2, ...> => <C> with Ai, and C elements and
 ## A1 < A2 < ... < C.
@@ -280,25 +291,25 @@ setMethod("show", signature(object = "summary.sequencerules"),
 
 setMethod("ruleInduction", signature(x = "sequences"),
     function(x, transactions, confidence = 0.8, control = NULL) {
-        if (!missing(transactions))
-            stop("'transactions' not implemented")
+        # if (!missing(transactions))
+        #     stop("'transactions' not implemented")
         # if (confidence < 0 || confidence > 1)
         #     stop("'confidence' invalid range")
         #
         # if (is.null(quality(x)))
         #     stop("cannot induce rules because support is missing")
 
-        if (is.null(control$verbose))
-            control$verbose <- FALSE
-        else
-        if (!is.logical(control$verbose)) {
-            stop("'verbose invalid range'")
-        }
-        if (is.null(control$maximal))
-            control$maximal <- FALSE
-        else
-        if (!is.logical(control$maximal))
-            stop("'maximal' invalid range")
+        # if (is.null(control$verbose))
+        #     control$verbose <- FALSE
+        # else
+        # if (!is.logical(control$verbose)) {
+        #     stop("'verbose invalid range'")
+        # }
+        # if (is.null(control$maximal)) {
+        #     control$maximal <- FALSE
+        # } else if (!is.logical(control$maximal)) {
+        #     stop("'maximal' invalid range")
+        # }
 
         # call C function for heavy lifting
         r <- data.frame(.Call(R_pnsindex, x@data, NULL, control$verbose))
