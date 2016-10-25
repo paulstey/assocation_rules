@@ -449,112 +449,106 @@ end
 
 
 
+a = [["a"], ["b"]]
+b = [["a"], ["b"], ["cd"], ["e"]]
+
+function postfix(root::Array{Array{String,1},1}, descendant::Array{Array{String,1},1})
+    post = Array{Array{String,1},1}(0)
+    n = length(root)
+    m = length(descendant)
+    i = 1
+
+    while i ≤ n
+        if root[i] == descendant[i]
+            i += 1
+        else
+            error("Prefix of root doesn't matach descendant")
+        end
+    end
+    for j = i:m
+        push!(post, descendant[j])
+    end
+    post
+end
+
+postfix(a, b)
 
 
 
 
 
 
+# In order to see why the above sequential_rules() function generates
+# fewer rules than R, we will convert our output to match R's and then
+# do a set difference on the string vectors to see what we aren't getting.
+
+function as_set_string(vect::Vector)
+    out = "{"
+    n = length(vect)
+    for (i, x) in enumerate(vect)
+        out *= x
+        if i ≠ n
+            out *= ","
+        end
+        if i == n
+            out *= "}"
+        end
+    end
+    out
+end
 
 
+function as_r_string(r::SeqRule)
+    out = "<"
+    n = length(r.prefix)
+    for (i, timepoint) in enumerate(r.prefix)
+        out *= as_set_string(timepoint)
+        if i ≠ n
+            out *= ","
+        end
+        if i == n
+            out *= ">"
+        end
+    end
+    out *= " => <"
+
+    m = length(r.postfix)
+    for (i, timepoint) in enumerate(r.postfix)
+        out *= as_set_string(timepoint)
+        if i ≠ m
+            out *= ","
+        end
+        if i == m
+            out *= ">"
+        end
+    end
+    out
+end
 
 
+function as_r_string(seq::Array{Array{String,1},1})
+    out = "<"
+    n = length(seq)
+    for (i, timepoint) in enumerate(seq)
+        out *= as_set_string(timepoint)
+        if i ≠ n
+            out *= ","
+        end
+        if i == n
+            out *= ">"
+        end
+    end
+    out
+end
 
 
+function rules_to_dataframe(rules::Array{SeqRule,1})
+    df = DataFrame()
+    n = length(rules)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-###
-# NOTE: These are spare parts from a false start where we
-# considered using strings to represent the patterns in
-# the PrefixNode objects. Now, we use nested arrays, as we
-# did in the IDList object to ensure sortability when inserting.
-###
-
-# function sequence_extension(seq::String, uniq_items::Array{String,1})
-#     child_seqs = String[]
-#     n = length(uniq_items)
-#
-#     for i = 1:n
-#         push!(child_seqs, string(seq, ",{", uniq_items[i], "}"))
-#     end
-#     child_seqs
-# end
-#
-#
-# function item_extension(seq::String, uniq_items::Array{String,1})
-#     child_seqs = String[]
-#     n = length(uniq_items)
-#
-#     for i = 1:n
-#         push!(child_seqs, string(seq[1:end-1], ",", uniq_items[i], "}"))
-#     end
-#     child_seqs
-# end
-#
-# sequence_extension("{A}", ["A", "B", "C"])
-# item_extension("{A}", ["A", "B", "C"])
-#
-# sequence_extension(seq::String, item::String) = string(seq[1:end], ",{", item, "}")
-# item_extension(seq::String, item::String) = string(seq[1:end-1], ",", item, "}")
-#
-# sequence_extension("{A}", "B")
-# item_extension("{A}", "B")
-#
-#
-# function seq_and_item_extension(seq::String, uniq_items::Array{String,1})
-#     child_seqs = String[]
-#     n = length(uniq_items)
-#
-#     for i = 1:n
-#         push!(child_seqs, string(seq, ",{", uniq_items[i], "}"))
-#         push!(child_seqs, string(seq[1:end-1], ",", uniq_items[i], "}"))
-#     end
-#     child_seqs
-# end
-#
-# seq_and_item_extension("{A}", ["A", "B", "C"])
-#
-#
-#
-
-#
-#
-#
-# p1 = "{A} -> {BC}"
-# p2 = "{A} -> {BC} -> {D}"
-#
-# extract_postfix(p1, p2)
+    df[:rules] = Array{String,1}(n)
+    for i = 1:n
+        df[i, :rules] = as_r_string(rules[i])
+    end
+    df
+end

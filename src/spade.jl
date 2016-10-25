@@ -28,6 +28,47 @@ type IDList
 end
 
 
+type PreNode
+    pattern::Array{Array{String,1},1}
+    # parent::PreNode
+    seq_ext_children::Array{PreNode,1}
+    item_ext_children::Array{PreNode,1}
+    support::Int64
+
+    PreNode(pattern) = new(pattern)
+end
+
+
+type PrefixNode
+    patrn::Array{Array{String,1},1}
+    supp::Int64
+    parent::PrefixNode
+
+    seq_extension_children::Array{PrefixNode, 1}
+    item_extension_children::Array{PrefixNode, 1}
+
+    PrefixNode(patrn, supp, parent) = new(patrn, supp, parent)      # incomplete initialization
+end
+
+
+type PNode
+    patrn::Array{Array{String,1},1}
+    supp::Int64
+end
+
+
+type SequenceRule
+    rule::String
+    conf::Float64
+end
+
+type SeqRule
+    prefix::Array{Array{String,1},1}
+    postfix::Array{Array{String,1},1}
+    conf::Float64
+end
+
+
 isempty(x::IDList) = isempty(x.sids)
 
 function allempty(x::Array{IDList, 1})
