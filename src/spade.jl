@@ -57,16 +57,16 @@ end
 # end
 
 
-type SequenceRule
-    rule::String
-    conf::Float64
-end
-
-# type SeqRule
-#     prefix::Array{Array{String,1},1}
-#     postfix::Array{Array{String,1},1}
+# type SequenceRule
+#     rule::String
 #     conf::Float64
 # end
+
+type SeqRule
+    prefix::Array{Array{String,1},1}
+    postfix::Array{Array{String,1},1}
+    conf::Float64
+end
 
 
 isempty(x::IDList) = isempty(x.sids)

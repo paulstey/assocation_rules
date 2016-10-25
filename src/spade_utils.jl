@@ -1,22 +1,4 @@
 
-# This is needed for the in() function
-# to work in our unique() function
-
-# original version: spade.jl
-
-# function ==(x::IDList, y::IDList)
-#     res = x.pattern == y.pattern &&
-#           x.sids == y.sids &&
-#           x.eids == y.eids &&
-#         #   x.elems == y.elems &&
-#           x.typ == y.typ &&
-#           x.supp == y.supp
-#     return res
-# end
-
-
-# used for alternative version: spade_alt.jl
-
 function ==(x::IDList, y::IDList)
     res = x.sids == y.sids &&
           x.eids == y.eids &&
@@ -217,6 +199,7 @@ function pattern_string(x::Array{Array{String, 1}, 1})
     end
     return s
 end
+
 
 function pattern_string(args...)
     n = length(args)
@@ -478,9 +461,8 @@ postfix(a, b)
 
 
 
-# In order to see why the above sequential_rules() function generates
-# fewer rules than R, we will convert our output to match R's and then
-# do a set difference on the string vectors to see what we aren't getting.
+# NOTE: The functions below are used to convert our output to
+# match R's returned strings (e.g., "<{A}, {B}> => <{C}>").
 
 function as_set_string(vect::Vector)
     out = "{"
