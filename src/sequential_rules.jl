@@ -15,8 +15,6 @@ function unique(v::Array{SequenceRule, 1})
 end
 
 
-
-
 ==(x::SeqRule, y::SeqRule) = x.prefix == y.prefix && x.postfix == y.postfix && x.conf == y.conf
 
 function unique(v::Array{SeqRule, 1})
@@ -66,8 +64,7 @@ end
 # rules = gen_rules1(res, 0)
 
 
-
-function create_children3(node::PreNode, uniq_items::Array{String,1}, supp_cnt)
+function create_children(node::PreNode, uniq_items::Array{String,1}, supp_cnt)
     seq_ext_children = Array{PreNode,1}(0)
     item_ext_children = Array{PreNode,1}(0)
 
@@ -109,11 +106,11 @@ xroot = PreNode([["A"]])
 xsupp_cnt = Dict("{A} -> {B}" => 1,
                  "{A} -> {C}" => 1,
                  "{A} -> {D}" => 1)
-@code_warntype create_children3(xroot, ["A", "B", "C", "D"], xsupp_cnt)
+@code_warntype create_children(xroot, ["A", "B", "C", "D"], xsupp_cnt)
 
 
 function growtree!(root, uniq_items, supp_cnt, depth = 0, maxdepth = 1)
-    root.seq_ext_children, root.item_ext_children = create_children3(root, uniq_items, supp_cnt)
+    root.seq_ext_children, root.item_ext_children = create_children(root, uniq_items, supp_cnt)
     allchildren = [root.seq_ext_children; root.item_ext_children]
 
     for child in allchildren
@@ -165,8 +162,6 @@ function build_tree(F::Array{Array{IDList,1},1}, maxdepth)
 end
 
 # @code_warntype build_tree(res, 20);
-
-
 
 
 
