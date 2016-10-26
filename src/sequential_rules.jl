@@ -234,7 +234,7 @@ end
 # prefix tree and then traverses the tree generating rules.
 # This could be made more efficient and cache-friendly by
 # building and traversing the tree in the same pass.
-function sequential_rules(F, min_conf, maxdepth = 15)
+function sequential_rules(F, min_conf, maxdepth = 5)
     root = build_tree(F, maxdepth)
 
     rules = Array{SeqRule,1}(0)

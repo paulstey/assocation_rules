@@ -1,3 +1,4 @@
+using StatsBase                 # just for sample()
 
 # testing a-priori algorithm
 transactions = [sample(1:10, 5, replace = false) for x in 1:100_000]

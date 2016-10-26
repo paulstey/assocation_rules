@@ -61,3 +61,52 @@ print_results <- function(dat) {
 print_results(res2)
 nrow(res2)
 
+
+
+
+
+# subset of Zaki data
+dset <- read_baskets("./projects_code/association_rules/data/zaki_data_extra_forR.txt", sep = "[ \t]+",info =  c("sequenceID","eventID", "SIZE"))
+summary(dset)
+as(dset, "data.frame")
+
+s3 <- cspade(dset, parameter = list(support = 0.2, maxlen = 20), control = list(verbose =TRUE))
+
+as(s3, "data.frame")
+summary(s3)
+
+r3 <- ruleInduction(s3, confidence = 0.01)
+res3 <- as(r3, "data.frame")
+
+print_results(res3)
+nrow(res3)
+
+
+
+
+
+
+x <- list("01" = list(c("A","B", "C"), "D"),
+          "02" = list("C"),
+          "03" = list("B", "B"),
+          "04" = list("A", "C", "D"))
+
+
+x <- list("01" = list(c("A","B"), "C"),
+          "02" = list("A", "B"),
+          "03" = list(c("D")))
+## uses paste
+s <- as(x, "sequences")
+s
+
+getSlots("sequences")
+s@elements
+s@sequenceInfo
+s@data@p
+s@data@i
+
+getSlots("itemsets")
+s@elements@items
+
+getSlots("itemMatrix")
+s@elements@items@data
