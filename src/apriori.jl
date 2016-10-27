@@ -138,6 +138,16 @@ end
 # T: array of transactions (each is a set)
 # minsup: minimum support
 # NOTE: This function agrees with R
+"""
+    frequent(T, minsup)
+
+Given an array of arrys holding transactions, this function returns the
+frequent item sets.
+
+### Arguments
+* `T`: array of arrays of transactions
+* `minsup`: minimum support needed to be considered frequent
+"""
 function frequent{M}(T::Array{Array{M, 1}, 1}, minsup::Float64)
 
     I = get_unique_items(T)
@@ -307,6 +317,19 @@ end
 
 # This function has constant memory footprint regardless
 # of the input size of T (for fixed minsupp and minconf)
+"""
+    apriori(T, minsupp, minconf, multi_consquents = true)
+
+This function implements the a-priori algorithm (Agrawal & Srikant, 1994) for
+generating association rules using transactional-type data.
+
+### Arguments
+* `T`: array of arrays of transactions
+* `minsupp`: minimum support threshold to be considered a frequent item set
+* `minconf`: minimum confidence threshold for association rules
+* `multi_consquents`: boolean indicating whether or not to generate multi-item consequents, default is `true`
+
+"""
 function apriori(T, minsupp, minconf, multi_consquents = true)
     F = frequent(T, minsupp)
     R = gen_rules(F, T, minsupp, minconf, multi_consquents)

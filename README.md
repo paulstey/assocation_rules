@@ -19,7 +19,7 @@ Pkg.clone("https://github.com/paulstey/association_rules")
 ## Examples
 Several examples below illustrate the use and features of the `apiori()` function and the `spade()` function.
 
-### Ex. 1 (_Apriori_ algorithm):
+### Ex. 1 _Apriori_ Algorithm:
 Here we are generating association rules using the `apriori()` function.
 ```{Julia}
 using AssociationRules
@@ -55,7 +55,7 @@ fk = frequent(transactions, 0.1)
 
 
 
-### Ex. 2 (_Apriori_ algorithm with tabular data)
+### Ex. 2 _Apriori_ Algorithm (with tabular data)
 The more common scenario will be the one in which we start with tabular data from a two-dimensional `Array` or a `DataFrame` object.
 ```{Julia}
 adult = readcsv("adult.csv")
@@ -68,13 +68,13 @@ rules = apriori(transactions, 0.1, 0.4)
 
 
 
-### Ex. 3 (SPADE algorithm with tabular data)
+### Ex. 3 SPADE Algorithm (with tabular data)
 The SPADE algorithm takes sequential transaction or event data and generates frequent sequential patterns. Once again, the standard scenario is the one in which we start with tabular data from a two-dimensional `Array` or a `DataFrame` object. This is then converted to and array of `Sequence` objects, which is the input type that our `spade()` function requires.
 ```{Julia}
 zaki_data = readcsv("../data/zaki_data.csv", skipstart = 1)
 
-# Convert tabular data to sequences. Sequence ID is
-# column 2, event ID is column 3, and event ID is column 1
+# Convert tabular data to sequences. Item is in
+# column 2, sequence ID is column 2, and event ID is column 3.
 seqs = make_sequences(zaki_data, item_col = 1, sid_col = 2, eid_col = 3)                   
 
 # generate frequent sequential patterns with minimum
