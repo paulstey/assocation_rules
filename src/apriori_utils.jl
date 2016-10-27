@@ -142,7 +142,7 @@ function print_wrapped_lines(p_line, q_line, colwidth)
     end
 end
 
-# print_wrapped_lines(wrap_line(v1, m), wrap_line(v2, m), 20)
+# print_wrapped_lines(wrap_line(v1, 15), wrap_line(v2, 15), 20)
 
 
 

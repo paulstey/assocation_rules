@@ -101,11 +101,11 @@ function create_children(node::PreNode, uniq_items::Array{String,1}, supp_cnt)
     return (seq_ext_children, item_ext_children)
 end
 
-xroot = PreNode([["A"]])
-xsupp_cnt = Dict("{A} -> {B}" => 1,
-                 "{A} -> {C}" => 1,
-                 "{A} -> {D}" => 1)
-@code_warntype create_children(xroot, ["A", "B", "C", "D"], xsupp_cnt)
+# xroot = PreNode([["A"]])
+# xsupp_cnt = Dict("{A} -> {B}" => 1,
+#                  "{A} -> {C}" => 1,
+#                  "{A} -> {D}" => 1)
+# @code_warntype create_children(xroot, ["A", "B", "C", "D"], xsupp_cnt)
 
 
 function growtree!(root, uniq_items, supp_cnt, depth = 0, maxdepth = 1)
@@ -121,11 +121,11 @@ function growtree!(root, uniq_items, supp_cnt, depth = 0, maxdepth = 1)
     end
 end
 
-xroot = PreNode([["A"]])
-xsupp_cnt = Dict("{A} -> {B}" => 1,
-                 "{A} -> {C}" => 1,
-                 "{A} -> {D}" => 1)
-@code_warntype growtree!(xroot, ["A", "B", "C", "D"], xsupp_cnt, 0, 3)
+# xroot = PreNode([["A"]])
+# xsupp_cnt = Dict("{A} -> {B}" => 1,
+#                  "{A} -> {C}" => 1,
+#                  "{A} -> {D}" => 1)
+# @code_warntype growtree!(xroot, ["A", "B", "C", "D"], xsupp_cnt, 0, 3)
 
 
 function build_tree(F::Array{Array{IDList,1},1}, maxdepth)
@@ -234,9 +234,17 @@ end
 # prefix tree and then traverses the tree generating rules.
 # This could be made more efficient and cache-friendly by
 # building and traversing the tree in the same pass.
-function sequential_rules(F; min_conf, maxdepth = 5)
-    root = build_tree(F, maxdepth)
+"""
+    sequential_rules(F; min_conf, maxdepth)
 
+This function takes an array of arrays with `IDList` objects, `F`, and
+returns an array of sequential rules. The rules will have confidence values
+greater than or equal to `min_conf`, and will only include rules that have
+`maxlength` number of elements. For example `maxlength = 3` will generate
+rules such as <{A},{B}> => <{C}> or <{D,E}> => <{F}>.
+"""
+function sequential_rules(F; min_conf = 0.1, maxlength = 5)
+    root = build_tree(F, maxlength)
     rules = Array{SeqRule,1}(0)
 
     for i = 1:length(root.seq_ext_children)

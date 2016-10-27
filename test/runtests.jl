@@ -22,7 +22,7 @@ display(rules2)
 # testing SPADE algorithm
 zaki_data = readcsv("../data/zaki_data.csv", skipstart = 1)
 seqs = make_sequences(zaki_data, sid_col = 2, eid_col = 3, item_col = 1)
-@time res = spade(seqs, 0.2, 20);
+@time res = spade(seqs, minsupp = 0.2, maxlength = 20);
 
 @assert length(res[1]) == 8
 @assert length(res[2]) == 57
@@ -36,10 +36,10 @@ seqs2 = make_sequences(zaki_data, sid_col = 2, eid_col = 3, item_col = 1)
 
 
 # test sequential-rule building algorithm
-seqrules = sequential_rules(res, 0.01)
+seqrules = sequential_rules(res, min_conf = 0.01, maxdepth = 5)
 @assert length(seqrules) == 3886
 
-seqrules2 = sequential_rules(res2, 0.01)
+seqrules2 = sequential_rules(res2, min_conf = 0.01, maxdepth = 5)
 @assert length(seqrules2) == 28
 
 
@@ -47,7 +47,7 @@ seqrules2 = sequential_rules(res2, 0.01)
 # testing SPADE algorithm with subset of Zaki data
 zaki_data = readcsv("../data/zaki_data_extra.csv", skipstart = 1)
 seqs3 = make_sequences(zaki_data, sid_col = 2, eid_col = 3, item_col = 1)
-@time res3 = spade(seqs3, 0.2, 5);
+@time res3 = spade(seqs3, minsupp = 0.2, maxlength = 5);
 
 
 # test sequential-rule building algorithm
