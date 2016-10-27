@@ -69,7 +69,7 @@ rules = apriori(transactions, 0.1, 0.4)
 
 
 ### Ex. 3 (SPADE algorithm with tabular data)
-The more common scenario will be the one in which we start with tabular data from a two-dimensional array or a `DataFrame` object.
+The SPADE algorithm takes sequential transaction or event data and generates frequent sequential patterns. Once again, we start with tabular data from a two-dimensional array or a `DataFrame` object. This is then converted to and array of `Sequence` objects, which is the input type that our `spade()` function requires.
 ```{Julia}
 zaki_data = readcsv("../data/zaki_data.csv", skipstart = 1)
 
