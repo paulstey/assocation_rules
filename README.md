@@ -56,7 +56,7 @@ fk = frequent(transactions, 0.1)
 
 
 ### Ex. 2 (_Apriori_ algorithm with tabular data)
-The more common scenario will be the one in which we start with tabular data from a two-dimensional array or a `DataFrame` object.
+The more common scenario will be the one in which we start with tabular data from a two-dimensional `Array` or a `DataFrame` object.
 ```{Julia}
 adult = readcsv("adult.csv")
 
@@ -69,12 +69,13 @@ rules = apriori(transactions, 0.1, 0.4)
 
 
 ### Ex. 3 (SPADE algorithm with tabular data)
-The SPADE algorithm takes sequential transaction or event data and generates frequent sequential patterns. Once again, we start with tabular data from a two-dimensional array or a `DataFrame` object. This is then converted to and array of `Sequence` objects, which is the input type that our `spade()` function requires.
+The SPADE algorithm takes sequential transaction or event data and generates frequent sequential patterns. Once again, the standard scenario is the one in which we start with tabular data from a two-dimensional `Array` or a `DataFrame` object. This is then converted to and array of `Sequence` objects, which is the input type that our `spade()` function requires.
 ```{Julia}
 zaki_data = readcsv("../data/zaki_data.csv", skipstart = 1)
 
-# convert tabular data
-seqs = make_sequences(zaki_data, 2, 3, 1)
+# Convert tabular data to sequences. Sequence ID is
+# column 2, event ID is column 3, and event ID is column 1
+seqs = make_sequences(zaki_data, 2, 3, 1)                   
 
 # generate frequent sequential patterns with minimum
 # support of 0.1 and maximum of 6 elements
@@ -87,7 +88,6 @@ res = spade(seqs, 0.2, 6)
 
 
 ## In progress
-- Sequential rule induction algorithm based on prefix trees
 - Update _Apriori_ to take advantage of multi-threaded parallelism
 
 

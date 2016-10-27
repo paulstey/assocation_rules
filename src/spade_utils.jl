@@ -131,7 +131,7 @@ end
 Given a data set, `dat`, in long format, this function extracts all
 the sequences and returns an array of `Sequence` objects.
 """
-function make_sequences(dat::Array{Any, 2}, sid_col, eid_col, item_col, excluded_strings = ["=>", ","])
+function make_sequences(dat::Array{Any, 2}; sid_col, eid_col, item_col, excluded_strings = ["=>", ","])
     seq_ids = unique(dat[:, sid_col])
     num_seqs = length(seq_ids)
     seq_arr = Array{Sequence, 1}(num_seqs)
