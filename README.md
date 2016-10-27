@@ -84,7 +84,7 @@ res = spade(seqs, 0.1, 6)
 
 
 ### Ex. 4 Sequential Rules
-The SPADE algorithm is used to generate frequent sequential patterns. Using these patterns we can derive sequential rules of the type _{X} => {Y}_, where {X} and {Y} are sequential patterns and _X_ preceded _Y_.
+The SPADE algorithm is used to generate frequent sequential patterns. Using these patterns we can derive sequential rules of the type _{X} => {Y}_, where _{X}_ and _{Y}_ are sequential patterns and _{X}_ preceded _{Y}_.
 ```{Julia}
 zaki_data = readcsv("../data/zaki_data.csv", skipstart = 1)
 
@@ -93,7 +93,7 @@ res = spade(seqs, 0.1, 6)
 
 # generate sequential rules with minimum
 # confidence of 0.1, and a maximum of 6 elements
-rules = sequential_rules(seq, 0.1, 5)
+rules = sequential_rules(seq, 0.1, 6)
 ```   
 ## Current Algorithms
 - _Apriori_ Algortihm (Agrawal & Srikant, 1994)
