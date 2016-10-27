@@ -68,13 +68,13 @@ rules = apriori(transactions, 0.1, 0.4)
 
 
 
-### Ex. 3 SPADE Algorithm (with tabular data)
+### Ex. 3 SPADE Algorithm
 The SPADE algorithm takes sequential transaction or event data and generates frequent sequential patterns. Once again, the standard scenario is the one in which we start with tabular data from a two-dimensional `Array` or a `DataFrame` object. This is then converted to and array of `Sequence` objects, which is the input type that our `spade()` function requires.
 ```{Julia}
 zaki_data = readcsv("../data/zaki_data.csv", skipstart = 1)
 
 # Convert tabular data to sequences. Item is in
-# column 2, sequence ID is column 2, and event ID is column 3.
+# column 1, sequence ID is column 2, and event ID is column 3.
 seqs = make_sequences(zaki_data, item_col = 1, sid_col = 2, eid_col = 3)                   
 
 # generate frequent sequential patterns with minimum
@@ -82,6 +82,19 @@ seqs = make_sequences(zaki_data, item_col = 1, sid_col = 2, eid_col = 3)
 res = spade(seqs, 0.1, 6)
 ```
 
+
+### Ex. 4 Sequential Rules
+The SPADE algorithm is used to generate frequent sequential patterns. Using these patterns we can derive sequential rules of the type _{X} => {Y}_, where {X} and {Y} are sequential patterns and _X_ preceded _Y_.
+```{Julia}
+zaki_data = readcsv("../data/zaki_data.csv", skipstart = 1)
+
+seqs = make_sequences(zaki_data, item_col = 1, sid_col = 2, eid_col = 3)                   
+res = spade(seqs, 0.1, 6)
+
+# generate sequential rules with minimum
+# confidence of 0.1, and a maximum of 6 elements
+rules = sequential_rules(seq, 0.1, 5)
+```   
 ## Current Algorithms
 - _Apriori_ Algortihm (Agrawal & Srikant, 1994)
 - SPADE Algorithm (Zaki, 2001)

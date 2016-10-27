@@ -1,8 +1,8 @@
 module AssociationRules
 
-using StatsBase
+# using StatsBase
 using Formatting
-using Combinatorics
+# using Combinatorics
 using Base.Threads
 
 import Base.==
