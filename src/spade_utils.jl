@@ -141,7 +141,7 @@ time. Thus, `dat` must have columns for item, sequence number, and time point
 * `eid_col`: event ID column index
 * `excluded_strings`: vector of strings to be removed from the raw input data
 """
-function make_sequences(dat::Array{Any, 2}; item_col = 1, sid_col = 2, eid_col = 3, excluded_strings = ["=>", ","])
+function make_sequences(dat::Array{Any, 2}; item_col = 1, sid_col = 2, eid_col = 3, excluded_strings = ["{", "}", ","])
     seq_ids = unique(dat[:, sid_col])
     num_seqs = length(seq_ids)
     seq_arr = Array{Sequence, 1}(num_seqs)

@@ -374,7 +374,7 @@ end
 
 
 """
-    spade(seqs; minsupp, maxlength)
+    spade(seqs, minsupp, maxlength)
 
 Given a vector of `Sequence` objects, this function executes the SPADE
 algorithm (Zaki, 2001). We can set `minsupp` to be our desired minimum level
@@ -382,9 +382,9 @@ of support for a pattern. And we can set `maxlength` to control the maximum
 number of items in a given pattern. The return value is an array of arrays,
 `F`, where each element of `F` is an array of `IDList` objects of length `k`.
 For example, `F[2]` has an array of all `IDLists` with patterns of length 2 (e.g.,
-{A,B} or {B => C})
+{A,B} or {C},{D})
 """
-function spade(seqs::Array{Sequence, 1}; minsupp = 0.1, maxlength = 5)
+function spade(seqs::Array{Sequence, 1}, minsupp = 0.1, maxlength = 5)
     F = Array{Array{IDList, 1}, 1}(0)
     f1 = Array{IDList, 1}(0)
     items = Array{String, 1}(0)

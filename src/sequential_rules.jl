@@ -243,7 +243,7 @@ greater than or equal to `min_conf`, and will only include rules that have
 `maxlength` number of elements. For example `maxlength = 3` will generate
 rules such as <{A},{B}> => <{C}> or <{D,E}> => <{F}>.
 """
-function sequential_rules(F; min_conf = 0.1, maxlength = 5)
+function sequential_rules(F, min_conf = 0.1, maxlength = 5)
     root = build_tree(F, maxlength)
     rules = Array{SeqRule,1}(0)
 
