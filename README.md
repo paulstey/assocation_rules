@@ -23,7 +23,7 @@ Several examples below illustrate the use and features of the `apiori()` functio
 Here we are generating association rules using the `apriori()` function.
 ```{Julia}
 using AssociationRules
-using StatsModels           # for sample() function
+using StatsBase                        # for sample() function
 
 # simulate transactions
 groceries = ["milk", "bread", "eggs", "apples", "oranges", "beer"]
@@ -75,11 +75,11 @@ zaki_data = readcsv("../data/zaki_data.csv", skipstart = 1)
 
 # Convert tabular data to sequences. Sequence ID is
 # column 2, event ID is column 3, and event ID is column 1
-seqs = make_sequences(zaki_data, 2, 3, 1)                   
+seqs = make_sequences(zaki_data, item_col = 1, sid_col = 2, eid_col = 3)                   
 
 # generate frequent sequential patterns with minimum
 # support of 0.1 and maximum of 6 elements
-res = spade(seqs, 0.2, 6)
+res = spade(seqs, 0.1, 6)
 ```
 
 ## Current Algorithms
