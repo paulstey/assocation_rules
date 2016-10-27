@@ -20,9 +20,10 @@ Pkg.clone("https://github.com/paulstey/association_rules")
 Several examples below illustrate the use and features of the `apiori()` function and the `spade()` function.
 
 ### Ex. 1 (_Apriori_ algorithm):
-Here we are generating association rules using `apriori()` function.
+Here we are generating association rules using the `apriori()` function.
 ```{Julia}
 using AssociationRules
+using StatsModels           # for sample() function
 
 # simulate transactions
 groceries = ["milk", "bread", "eggs", "apples", "oranges", "beer"]
