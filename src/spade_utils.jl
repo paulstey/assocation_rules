@@ -202,7 +202,7 @@ function pattern_string(x::Array{Array{String, 1}, 1})
     s = ""
     for i = 1:n
         if i < n
-            s *= string("{", join_strings(x[i]), "} -> ")
+            s *= string("{", join_strings(x[i]), "},")
         elseif i == n
             s *= string("{", join_strings(x[i]), "}")
         end
@@ -216,7 +216,7 @@ function pattern_string(args...)
     s = ""
     for i = 1:n
         if i < n
-            s *= string("{", join_strings(args[i]), "} -> ")
+            s *= string("{", join_strings(args[i]), "},")
         elseif i == n
             s *= string("{", join_strings(args[i]), "}")
         end
@@ -254,145 +254,6 @@ function count_patterns(F::Array{Array{IDList, 1}, 1})
 end
 
 
-
-function gen_combos(x::Array{Array{String,1},1})
-    allcombos = Array{Array{Array{String,1},1},1}(0)
-
-    n = length(x)
-    for i = 1:n
-        combos = collect(combinations(x[i]))
-        push!(allcombos, combos)
-    end
-    allcombos
-end
-
-
-
-
-function subset_pattern(x::Array{Array{Array{String, 1}, 1}, 1})
-    out = String[]
-    for c1 in x[1]
-        for c2 in x[2]
-            push!(out, string(join_strings(c1), " -> ", join_strings(c2)))
-        end
-    end
-    out
-end
-
-# combins = gen_combos(res[6][13].patrn)
-# subset_pattern(combins)
-
-
-
-
-function one_set_left(s)
-    idx = search(s, '{')
-    if search(s[(idx+1):end], '{') == 0
-        res = true
-    else
-        res = false
-    end
-    res
-end
-
-
-
-# Given a string containing a pattern of the
-# form "{A} -> {B,C} -> {} -> {D,E,F} -> {}",
-# this function removes all empty sets `{}`, and
-# would return "{A} -> {B,C} -> {D,E,F}"
-function remove_empties(s::String)
-    n = length(s)
-    persist = true
-
-    while persist
-        rng = rfind(s, "{}")
-        if rng == 0:-1
-            persist = false
-        elseif rng ≠ 0:-1
-
-            # `{}` found at end of string
-            if rng[end] == n
-                s = s[1:(rng[1] - 5)]
-            # `{}` found in middle of string
-            elseif rng[end] ≠ n
-                s = s[1:(rng[1] - 1)] * s[(rng[end]+5):end]
-            # `{}` found at beginning of string
-            elseif rng[1] == 1
-                s = s[(rng[end]+5):end]
-            end
-        end
-        n = length(s)
-        if n == 0
-            return ""
-        end
-    end
-
-    if one_set_left(s)
-        idx1 = search(s, '{')
-        idx2 = search(s, '}')
-
-        s = s[idx1:idx2]
-    end
-    s
-end
-#
-s1 = "{A} -> {B,C} -> {} -> {D,E,F} -> {}"
-remove_empties(s1)
-
-
-# Given a frequent pattern (from and IDList), this function returns
-# all the sub-patterns that can be generated that preserve the order.
-# For example, we can generate the sub-pattern {A} -> {B} (and
-# many others) from the original pattern {A,C} -> {B,D} -> {F,E}.
-
-function gen_combin_subpatterns(patrn)
-    global combinations_arrays = gen_combos(patrn)
-
-    # Here we add vectors with empty strings b/c for each
-    # timepoint set, x1, where x1 = {...}, we want to consider
-    # combinations in which no element is drawn from x1.
-    for i = 1:length(combinations_arrays)
-        push!(combinations_arrays[i], String[""])
-    end
-    out = String[]
-
-    function fill_pattern_array!()
-        vars = Symbol[]
-        inner = :(addpattern!($out))
-        outer = inner
-        n = length(combinations_arrays)
-
-        for dim = 1:n
-            var = Symbol("c$dim")
-            push!(vars, var)
-            push!(inner.args, var)
-            outer = :(
-                for $var in combinations_arrays[$dim]
-                    $outer
-                end
-            )
-            # println(outer)
-        end
-        # push!(inner.args, :out)
-        return outer
-    end
-    eval(fill_pattern_array!())
-    out_cln = map(remove_empties, out)
-    return out_cln
-end
-
-
-
-# combins = gen_combos(res[6][13].patrn)
-
-# push!(combins[1], String[""])
-# push!(combins[2], String[""])
-# push!(combins[3], String[""])
-#
-# out = String[]
-# eval(fill_pattern_array!(combins))
-# gen_combin_subpatterns(res[6][13].patrn)
 
 
 
