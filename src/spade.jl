@@ -28,39 +28,16 @@ type IDList
 end
 
 
-type PreNode
+type PrefixNode
     pattern::Array{Array{String,1},1}
-    # parent::PreNode
-    seq_ext_children::Array{PreNode,1}
-    item_ext_children::Array{PreNode,1}
+    # parent::PrefixNode
+    seq_ext_children::Array{PrefixNode,1}
+    item_ext_children::Array{PrefixNode,1}
     support::Int64
 
-    PreNode(pattern) = new(pattern)
+    PrefixNode(pattern) = new(pattern)
 end
 
-
-# type PrefixNode
-#     patrn::Array{Array{String,1},1}
-#     supp::Int64
-#     parent::PrefixNode
-#
-#     seq_extension_children::Array{PrefixNode, 1}
-#     item_extension_children::Array{PrefixNode, 1}
-#
-#     PrefixNode(patrn, supp, parent) = new(patrn, supp, parent)      # incomplete initialization
-# end
-#
-#
-# type PNode
-#     patrn::Array{Array{String,1},1}
-#     supp::Int64
-# end
-
-
-# type SequenceRule
-#     rule::String
-#     conf::Float64
-# end
 
 type SeqRule
     prefix::Array{Array{String,1},1}
@@ -313,30 +290,32 @@ end
 
 
 
-# s1 = Sequence(
-#     1,
-#     [1, 2, 3, 4, 5, 6],
-#     [["a", "b", "d"], ["a", "e"], ["a", "b", "e"], ["b", "c", "d"], ["b", "c"], ["b", "d"]])
-#
-# s2 = Sequence(
-#     2,
-#     [1, 2, 3, 4, 5],
-#     [["a", "c", "d"], ["a"], ["a", "b", "d"], ["a", "b"], ["b", "d"]])
-#
-#
-# seq_arr = [s1, s2]
-# alist = first_idlist(seq_arr, "a", 2)
-# clist = first_idlist(seq_arr, "c", 2)
-# dlist = first_idlist(seq_arr, "d", 2)
-#
-# @code_warntype first_idlist(seq_arr, "d", 2)
-#
-# cdlist = first_merge(clist, dlist, 2, 0.1)
-# adlist = first_merge(alist, dlist, 2, 0.1)
-#
-# @code_warntype temporal_join(cdlist[1], adlist[1], Val{:sequence}, Val{:sequence}, 2)
-#
-# @code_warntype equality_join(cdlist[1], adlist[1], 2)
+s1 = Sequence(
+    1,
+    [1, 2, 3, 4, 5, 6],
+    [["a", "b", "d"], ["a", "e"], ["a", "b", "e"], ["b", "c", "d"], ["b", "c"], ["b", "d"]])
+
+s2 = Sequence(
+    2,
+    [1, 2, 3, 4, 5],
+    [["a", "c", "d"], ["a"], ["a", "b", "d"], ["a", "b"], ["b", "d"]])
+
+
+seq_arr = [s1, s2]
+alist = first_idlist(seq_arr, "a", 2)
+clist = first_idlist(seq_arr, "c", 2)
+dlist = first_idlist(seq_arr, "d", 2)
+
+@code_warntype first_idlist(seq_arr, "d", 2)
+@time first_idlist(seq_arr, "d", 2);
+
+
+cdlist = first_merge(clist, dlist, 2, 0.1)
+adlist = first_merge(alist, dlist, 2, 0.1)
+
+@code_warntype temporal_join(cdlist[1], adlist[1], Val{:sequence}, Val{:sequence}, 2)
+
+@code_warntype equality_join(cdlist[1], adlist[1], 2)
 
 
 

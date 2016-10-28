@@ -79,7 +79,7 @@ seqs = make_sequences(zaki_data, item_col = 1, sid_col = 2, eid_col = 3)
 
 # generate frequent sequential patterns with minimum
 # support of 0.1 and maximum of 6 elements
-res = spade(seqs, 0.1, 6)
+fseq = spade(seqs, 0.1, 6)
 ```
 
 
@@ -89,11 +89,11 @@ The SPADE algorithm is used to generate frequent sequential patterns. Using thes
 zaki_data = readcsv("../data/zaki_data.csv", skipstart = 1)
 
 seqs = make_sequences(zaki_data, item_col = 1, sid_col = 2, eid_col = 3)                   
-res = spade(seqs, 0.1, 6)
+fseq = spade(seqs, 0.1, 6)
 
 # generate sequential rules with minimum
 # confidence of 0.1, and a maximum of 6 elements
-rules = sequential_rules(seq, 0.1, 6)
+rules = sequential_rules(fseq, 0.1, 6)
 ```   
 ## Current Algorithms
 - _Apriori_ Algortihm (Agrawal & Srikant, 1994)

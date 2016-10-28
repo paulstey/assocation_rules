@@ -53,3 +53,12 @@ seqs3 = make_sequences(zaki_data, sid_col = 2, eid_col = 3, item_col = 1)
 # test sequential-rule building algorithm
 @time seqrules3 = sequential_rules(res3, 0.01, 5);
 length(seqrules3)
+
+letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N"]
+n = 1000
+nseq = 20
+ntime = 50
+zaki_rep_data = hcat(rand(letters, n), rand(collect(1:nseq), n), rand(collect(1:ntime), n))
+
+seqs4 = make_sequences(zaki_rep_data, sid_col = 2, eid_col = 3, item_col = 1)
+@time res4 = spade(seqs4, 0.2, 5);
