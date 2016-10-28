@@ -226,6 +226,25 @@ end
 pattern_string(s::String) = string("{", s, "}")
 
 
+# Given a vector of strings, this returns a single
+# string with the vector's elements separated by
+# commas, with braces at start and end.
+function pattern_string(v::Array{String,1})
+    out = "{"
+    n = length(v)
+
+    for i = 1:n
+        if i < n
+            out *= "$(v[i]),"
+        elseif i == n
+            out *= "$(v[i])}"
+        end
+    end
+    out
+end
+
+
+
 # This is our workhorse used in the nloops_gen(), which
 # is a function that generates n nested loops.
 function addpattern!(v, args...)

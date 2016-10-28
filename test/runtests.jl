@@ -62,3 +62,19 @@ zaki_rep_data = hcat(rand(letters, n), rand(collect(1:nseq), n), rand(collect(1:
 
 seqs4 = make_sequences(zaki_rep_data, sid_col = 2, eid_col = 3, item_col = 1)
 @time res4 = spade(seqs4, 0.2, 5);
+
+
+
+function benchmark1(n)
+    nseq = 10
+    ntime = 10
+    maxdepth = 10
+    letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T"]
+
+    dat = hcat(rand(letters, n), rand(collect(1:nseq), n), rand(collect(1:ntime), n))
+    seqs = make_sequences(dat, sid_col = 2, eid_col = 3, item_col = 1);
+    @time x = spade(seqs, 0.2, maxdepth);
+    return nothing
+end
+
+benchmark1(100)

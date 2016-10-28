@@ -46,6 +46,49 @@ type SeqRule
 end
 
 
+
+type SeqPattern
+    head::String
+    tail::Array{String,1}
+
+    function SeqPattern(oldhead, oldtail, addon, typ::Symbol)
+        if typ == :sequence
+            head = string(oldhead, ",", pattern_string(oldtail))
+            res = new(head, [addon])
+        elseif typ == :event
+            push!(oldtail, addon)
+            tail = sort(oldtail)
+            res = new(oldhead, tail)
+        elseif typ == :initial
+            res = new("", [addon])
+        end
+
+        return res
+    end
+end
+
+
+SeqPattern("", String[], "A", :initial)
+
+type IDList2
+    patrn::SeqPattern
+    sids::Array{Int, 1}
+    eids::Array{Int, 1}
+    typ::Symbol                         # pattern type is `:initial`, `:sequence` or `:event`
+    supp::Float64
+    supp_cnt::Int
+
+    function IDList2(patrn, sids, eids, typ, num_sequences)
+        res = new(patrn, sids, eids, typ, length(unique(sids))/num_sequences, length(unique(sids)))
+        return res
+    end
+end
+
+
+
+
+
+
 isempty(x::IDList) = isempty(x.sids)
 
 function allempty(x::Array{IDList, 1})
@@ -149,10 +192,12 @@ end
 # in which both id-lists are for sequence patterns.
 function temporal_join(l1, l2, ::Type{Val{:sequence}}, ::Type{Val{:sequence}}, num_sequences)
     # initialize 3 pairs of empty `sids` and `eids` arrays
-    for i = 1:3, x in ["sids", "eids"]
-        arr = Symbol(string(x, i))
-        @eval $arr = Array{Int,1}(0)
-    end
+    sids1 = Array{Int,1}(0)
+    eids1 = Array{Int,1}(0)
+    sids2 = Array{Int,1}(0)
+    eids2 = Array{Int,1}(0)
+    sids3 = Array{Int,1}(0)
+    eids3 = Array{Int,1}(0)
 
     n = length(l1.sids)
     m = length(l2.sids)
