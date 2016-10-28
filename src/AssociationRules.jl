@@ -1,4 +1,4 @@
-module AssociationRules
+# module AssociationRules
 
 # using StatsBase
 using Formatting
@@ -20,4 +20,4 @@ include("spade.jl")
 include("spade_utils.jl")
 include("sequential_rules.jl")
 
-end # module
+# end # module

@@ -13,8 +13,65 @@ type Sequence
 end
 
 
+
+# Given a vector of strings, this returns a single
+# string with the vector's elements separated by
+# commas, with braces at start and end.
+function pattern_string(v::Array{String,1})
+    out = "{"
+    n = length(v)
+
+    for i = 1:n
+        if i < n
+            out *= "$(v[i]),"
+        elseif i == n
+            out *= "$(v[i])}"
+        end
+    end
+    out
+end
+
+
+type SeqPattern
+    head::String
+    tail::Array{String,1}
+
+    function SeqPattern(oldhead, oldtail, addon, typ::Symbol)
+        if typ != :initial
+            if !isempty(oldhead)
+                if typ == :sequence
+                    head = string(oldhead, ",", pattern_string(oldtail))
+                    res = new(head, [addon])
+                elseif typ == :event
+                    push!(oldtail, addon)
+                    tail = sort(oldtail)
+                    res = new(oldhead, tail)
+                end
+            elseif isempty(oldhead)
+                if typ == :sequence
+                    head = pattern_string(oldtail)
+                    res = new(head, [addon])
+                elseif typ == :event
+                    push!(oldtail, addon)
+                    tail = sort(oldtail)
+                    res = new(oldhead, tail)
+                end
+            end
+        elseif typ == :initial
+            res = new("", [addon])
+        end
+        return res
+    end
+end
+
+
+SeqPattern("{A},{B,C}", ["D", "E"], "F", :sequence)
+SeqPattern("", String[], "F", :initial)
+
+
+
 type IDList
-    patrn::Array{Array{String, 1}, 1}   # vector of vectors with the elements in `pattern`
+    patrn::SeqPattern   # vector of vectors with the elements in `pattern`
     sids::Array{Int, 1}
     eids::Array{Int, 1}
     typ::Symbol                         # pattern type is `:initial`, `:sequence` or `:event`
@@ -43,45 +100,6 @@ type SeqRule
     prefix::Array{Array{String,1},1}
     postfix::Array{Array{String,1},1}
     conf::Float64
-end
-
-
-
-type SeqPattern
-    head::String
-    tail::Array{String,1}
-
-    function SeqPattern(oldhead, oldtail, addon, typ::Symbol)
-        if typ == :sequence
-            head = string(oldhead, ",", pattern_string(oldtail))
-            res = new(head, [addon])
-        elseif typ == :event
-            push!(oldtail, addon)
-            tail = sort(oldtail)
-            res = new(oldhead, tail)
-        elseif typ == :initial
-            res = new("", [addon])
-        end
-
-        return res
-    end
-end
-
-
-SeqPattern("", String[], "A", :initial)
-
-type IDList2
-    patrn::SeqPattern
-    sids::Array{Int, 1}
-    eids::Array{Int, 1}
-    typ::Symbol                         # pattern type is `:initial`, `:sequence` or `:event`
-    supp::Float64
-    supp_cnt::Int
-
-    function IDList2(patrn, sids, eids, typ, num_sequences)
-        res = new(patrn, sids, eids, typ, length(unique(sids))/num_sequences, length(unique(sids)))
-        return res
-    end
 end
 
 
@@ -121,11 +139,24 @@ function prefix(x::Array{Array{String, 1}, 1})
     res                 # returns array of arrays
 end
 
-
+# old method before `SeqPattern`
 function suffix(x::Array{Array{String, 1}, 1})
      res = x[end][end]
      res                # returns a string
 end
+
+
+function suffix(x::SeqPattern)
+     res = x.tail[end]
+     res                # returns a string
+end
+
+
+function prefix(x::SeqPattern)
+    res = "$(x.head),$(pattern_string(x.tail[1:end-1]))"
+    res
+end
+
 
 
 # Given an array of `Sequence` objects, this function
@@ -142,7 +173,9 @@ function first_idlist(seqs::Array{Sequence, 1}, pattern, num_sequences)
             end
         end
     end
-    return IDList([[pattern]], sids, eids, :initial, num_sequences)
+    # return IDList([[pattern]], sids, eids, :initial, num_sequences)
+    patrn = SeqPattern("", String[], pattern, :initial)
+    return IDList(patrn, sids, eids, :initial, num_sequences)
 end
 
 
@@ -161,8 +194,8 @@ function equality_join(l1, l2, num_sequences)
             end
         end
     end
-    pattern::Array{Array{String, 1}, 1} = [l1.patrn[1:end-1]; [sort([l1.patrn[end]; suffix(l2.patrn)])]]
-
+    # pattern::Array{Array{String, 1}, 1} = [l1.patrn[1:end-1]; [sort([l1.patrn[end]; suffix(l2.patrn)])]] # old method
+    pattern = SeqPattern(l1.patrn.head, l1.patrn.tail, l2.patrn.tail[end], :event)
     return IDList(pattern, sids, eids, :event, num_sequences)
 end
 
@@ -219,9 +252,15 @@ function temporal_join(l1, l2, ::Type{Val{:sequence}}, ::Type{Val{:sequence}}, n
             end
         end
     end
-    seq_patrn1 = [l1.patrn; [[suffix(l2.patrn)]]]
-    event_patrn::Array{Array{String, 1}, 1} = [l1.patrn[1:end-1]; [sort([l1.patrn[end]; suffix(l2.patrn)])]]
-    seq_patrn2 = [l2.patrn; [[suffix(l1.patrn)]]]
+    ## old way before `SeqPattern`
+    # seq_patrn1 = [l1.patrn; [[suffix(l2.patrn)]]]
+    # event_patrn::Array{Array{String, 1}, 1} = [l1.patrn[1:end-1]; [sort([l1.patrn[end]; suffix(l2.patrn)])]]
+    # seq_patrn2 = [l2.patrn; [[suffix(l1.patrn)]]]
+
+
+    seq_patrn1 = SeqPattern(l1.patrn.head, l1.patrn.tail, l2.patrn.tail[end], :sequence)
+    event_patrn = SeqPattern(l1.patrn.head, l1.patrn.tail, l2.patrn.tail[end], :event)
+    seq_patrn2 = SeqPattern(l2.patrn.head, l2.patrn.tail, l1.patrn.tail[end], :sequence)
 
     idlist_arr = IDList[IDList(seq_patrn1,
                                sids1,
@@ -261,7 +300,9 @@ function temporal_join(l1, l2, ::Type{Val{:event}}, ::Type{Val{:sequence}}, num_
             end
         end
     end
-    pattern = [l1.patrn; [[suffix(l2.patrn)]]]
+    ## old method before `SeqPattern`
+    # pattern = [l1.patrn; [[suffix(l2.patrn)]]]
+    pattern = SeqPattern(l1.patrn.head, l1.pattern.tail, l2.patrn.tail[end], :sequence)
 
     return IDList[IDList(pattern, sids, eids, :sequence, num_sequences)]
 end
@@ -278,7 +319,7 @@ function first_merge!(l1::IDList, l2::IDList, eq_sids, eq_eids, tm_sids, tm_eids
         for j = 1:length(l2.sids)
             if l1.sids[i] == l2.sids[j]
                 # equality join
-                if l1.eids[i] == l2.eids[j] && suffix(l1) ≠ suffix(l2)
+                if l1.eids[i] == l2.eids[j] && suffix(l1.patrn) ≠ suffix(l2.patrn)
                     push!(eq_sids, l1.sids[i])
                     push!(eq_eids, l1.eids[i])
                 # temporal join
@@ -304,8 +345,12 @@ function first_merge(l1::IDList, l2::IDList, num_sequences, minsupp)
 
     first_merge!(l1, l2, eq_sids, eq_eids, tm_sids, tm_eids)
 
-    event_patrn = [l1.patrn[1:end-1]; [sort([l1.patrn[end]; suffix(l2.patrn)])]]
-    seq_patrn = [l1.patrn; [[suffix(l2.patrn)]]]
+    ## old method before `SeqPattern`
+    # event_patrn = [l1.patrn[1:end-1]; [sort([l1.patrn[end]; suffix(l2.patrn)])]]
+    # seq_patrn = [l1.patrn; [[suffix(l2.patrn)]]]
+    event_patrn = SeqPattern(l1.patrn.head, l1.patrn.tail, l2.patrn.tail[end], :event)
+    seq_patrn = SeqPattern(l1.patrn.head, l1.patrn.tail, l2.patrn.tail[end], :sequence)
+
 
     event_idlist = IDList(event_patrn, eq_sids, eq_eids, :event, num_sequences)
     seq_idlist = IDList(seq_patrn, tm_sids, tm_eids, :sequence, num_sequences)
@@ -377,7 +422,7 @@ function spade!(f, F, num_sequences, minsupp)
         for j = i:n
             # If both are event patterns, we will only merge
             # id-lists when the suffixes are not identical.
-            if f[i].typ == f[j].typ == :event && suffix(f[i]) == suffix(f[j])
+            if f[i].typ == f[j].typ == :event && suffix(f[i].patrn) == suffix(f[j].patrn)
                 continue
             elseif prefix(f[i]) == prefix(f[j])
                 idlist_arr = merge_idlists(f[i], f[j], num_sequences)
