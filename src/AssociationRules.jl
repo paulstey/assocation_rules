@@ -11,7 +11,7 @@ import Base.display
 import Base.isempty
 import Base.find
 
-export Rule, Sequence, IDList, PrefixNode, SeqRule, apriori, frequent, make_transactions, spade, make_sequences, sequential_rules
+# export Rule, Sequence, IDList, PrefixNode, SeqRule, apriori, frequent, make_transactions, spade, make_sequences, sequential_rules
 
 include("apriori.jl")
 include("apriori_utils.jl")

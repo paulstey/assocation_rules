@@ -27,6 +27,11 @@ seqs = make_sequences(zaki_data, sid_col = 2, eid_col = 3, item_col = 1)
 @assert length(res[1]) == 8
 @assert length(res[2]) == 57
 @assert length(res[3]) == 191
+@assert length(res[4]) == 444
+@assert length(res[5]) == 743
+@assert length(res[6]) == 897
+@assert length(res[7]) == 784
+
 
 
 # testing SPADE algorithm with subset of Zaki data
