@@ -72,8 +72,8 @@ end
 
 SeqPattern("{A}", ["D", "E"], "F", :sequence)
 SeqPattern("", String[], "F", :initial)
-SeqPattern("", String["A"], "B", :event)
-
+SeqPattern("", ["A"], "B", :event)
+SeqPattern("{A}", ["B", "C"], "D", :sequence)
 
 
 type IDList
@@ -159,8 +159,17 @@ end
 
 
 function prefix(x::SeqPattern)
-    res = "$(x.head),$(pattern_string(x.tail[1:end-1]))"
-    res
+    if isempty(x.head)
+        res = pattern_string(x.tail[1:end-1])
+    elseif !isempty(x.head)
+        if length(x.tail) > 1
+            res = "$(x.head),$(pattern_string(x.tail[1:end-1]))"
+        elseif length(x.tail) ≤ 1
+            res = x.head
+        end
+    end
+
+    return res
 end
 
 
@@ -409,8 +418,9 @@ dlist = first_idlist(seq_arr, "d", 2)
 cdlist = first_merge(clist, dlist, 2, 0.1)
 adlist = first_merge(alist, dlist, 2, 0.1)
 
-@code_warntype temporal_join(cdlist[1], adlist[1], Val{:sequence}, Val{:sequence}, 2)
+merge_idlists(adlist[1], cdlist[2], 0.1)
 
+@code_warntype temporal_join(cdlist[1], adlist[1], Val{:sequence}, Val{:sequence}, 2)
 @code_warntype equality_join(cdlist[1], adlist[1], 2)
 
 
