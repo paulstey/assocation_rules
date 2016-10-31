@@ -9,6 +9,13 @@ function ==(x::IDList, y::IDList)
 end
 
 
+function ==(x::SeqPattern, y::SeqPattern)
+    res = x.head == y.head &&
+          x.tail == y.tail
+    return res
+end
+
+
 function unique(v::Array{IDList, 1})
     out = Array{IDList, 1}(0)
     for i = 1:length(v)

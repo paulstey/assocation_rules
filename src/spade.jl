@@ -43,20 +43,25 @@ type SeqPattern
                     head = string(oldhead, ",", pattern_string(oldtail))
                     res = new(head, [addon])
                 elseif typ == :event
-                    push!(oldtail, addon)
-                    tail = sort(oldtail)
+                    tail = [oldtail; addon]
+                    sort!(tail)
                     res = new(oldhead, tail)
                 end
+            # If it's not the initation, but the head is empty, then
+            # we are either on F[k] = 2, or F[k] > 2 and all joins have
+            # been event joins.
             elseif isempty(oldhead)
                 if typ == :sequence
                     head = pattern_string(oldtail)
                     res = new(head, [addon])
                 elseif typ == :event
-                    push!(oldtail, addon)
-                    tail = sort(oldtail)
+                    tail = [oldtail; addon]
+                    sort!(tail)
                     res = new(oldhead, tail)
                 end
             end
+        # For the initiation, we just leave the head empty and
+        # include the add-on as the sole element in the tail.
         elseif typ == :initial
             res = new("", [addon])
         end
@@ -65,8 +70,9 @@ type SeqPattern
 end
 
 
-SeqPattern("{A},{B,C}", ["D", "E"], "F", :sequence)
+SeqPattern("{A}", ["D", "E"], "F", :sequence)
 SeqPattern("", String[], "F", :initial)
+SeqPattern("", String["A"], "B", :event)
 
 
 
@@ -302,7 +308,7 @@ function temporal_join(l1, l2, ::Type{Val{:event}}, ::Type{Val{:sequence}}, num_
     end
     ## old method before `SeqPattern`
     # pattern = [l1.patrn; [[suffix(l2.patrn)]]]
-    pattern = SeqPattern(l1.patrn.head, l1.pattern.tail, l2.patrn.tail[end], :sequence)
+    pattern = SeqPattern(l1.patrn.head, l1.patrn.tail, l2.patrn.tail[end], :sequence)
 
     return IDList[IDList(pattern, sids, eids, :sequence, num_sequences)]
 end
