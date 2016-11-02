@@ -36,16 +36,16 @@ type SeqPattern
     head::String
     tail::Array{String,1}
 
-    function SeqPattern(oldhead, oldtail, addon, typ::Symbol)
+    function SeqPattern(oldhead::String, oldtail::Array{String,1}, addon::String, typ::Symbol)
         if typ != :initial
             if !isempty(oldhead)
                 if typ == :sequence
                     head = string(oldhead, ",", pattern_string(oldtail))
                     res = new(head, [addon])
                 elseif typ == :event
-                    tail = [oldtail; addon]
-                    sort!(tail)
-                    res = new(oldhead, tail)
+                    tail1::Array{String,1} = vcat(oldtail, addon)
+                    sort!(tail1)
+                    res = new(oldhead, tail1)
                 end
             # If it's not the initation, but the head is empty, then
             # we are either on F[k] = 2, or F[k] > 2 and all joins have
@@ -55,9 +55,9 @@ type SeqPattern
                     head = pattern_string(oldtail)
                     res = new(head, [addon])
                 elseif typ == :event
-                    tail = [oldtail; addon]
-                    sort!(tail)
-                    res = new(oldhead, tail)
+                    tail2::Array{String,1} = vcat(oldtail, addon)
+                    sort!(tail2)
+                    res = new(oldhead, tail2)
                 end
             end
         # For the initiation, we just leave the head empty and
@@ -70,7 +70,7 @@ type SeqPattern
 end
 
 
-SeqPattern("{A}", ["D", "E"], "F", :sequence)
+@code_warntype SeqPattern("{A}", ["D", "E"], "F", :sequence)
 SeqPattern("", String[], "F", :initial)
 SeqPattern("", ["A"], "B", :event)
 SeqPattern("{A}", ["B", "C"], "D", :sequence)
