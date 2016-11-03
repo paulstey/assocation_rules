@@ -418,10 +418,12 @@ dlist = first_idlist(seq_arr, "d", 2)
 cdlist = first_merge(clist, dlist, 2, 0.1)
 adlist = first_merge(alist, dlist, 2, 0.1)
 
-merge_idlists(adlist[1], cdlist[2], 0.1)
+@code_warntype merge_idlists(adlist[1], cdlist[2], 0.1)
 
 @code_warntype temporal_join(cdlist[1], adlist[1], Val{:sequence}, Val{:sequence}, 2)
 @code_warntype equality_join(cdlist[1], adlist[1], 2)
+
+@time temporal_join(cdlist[1], adlist[1], Val{:sequence}, Val{:sequence}, 2)
 
 
 
@@ -438,8 +440,10 @@ function spade!(f, F, num_sequences, minsupp)
         for j = i:n
             # If both are event patterns, we will only merge
             # id-lists when the suffixes are not identical.
-            if f[i].typ == f[j].typ == :event && suffix(f[i].patrn) == suffix(f[j].patrn)
-                continue
+            if f[i].typ == f[j].typ == :event
+                if suffix(f[i].patrn) == suffix(f[j].patrn)
+                    continue
+                end
             elseif prefix(f[i]) == prefix(f[j])
                 idlist_arr = merge_idlists(f[i], f[j], num_sequences)
                 filter!(x -> x.supp ≥ minsupp, idlist_arr)
@@ -454,6 +458,7 @@ function spade!(f, F, num_sequences, minsupp)
         fk = reduce(vcat, f_tmp)
         push!(F, unique(fk))
     end
+    return nothing # this seems to remove flag from @code_warntype 
 end
 
 

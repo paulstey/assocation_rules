@@ -1,8 +1,11 @@
 using StatsBase                 # just for sample()
 
 # testing a-priori algorithm
-transactions = [sample(1:10, 5, replace = false) for x in 1:100_000]
-fk = frequent(transactions, 0.1)
+transactions = [sample(1:100, 10, replace = false) for x in 1:400_000]
+# fk = frequent(transactions, 0.1)
+@time apriori(transactions, 0.1, 0.8, false);
+
+
 
 groceries = ["milk", "bread", "eggs", "apples", "oranges", "beer"]
 transactions = [sample(groceries, 4, replace = false) for x in 1:1000]
@@ -54,6 +57,8 @@ zaki_data = readcsv("../data/zaki_data_extra.csv", skipstart = 1)
 seqs3 = make_sequences(zaki_data, sid_col = 2, eid_col = 3, item_col = 1)
 @time res3 = spade(seqs3, 0.2, 5);
 
+@code_warntype spade!(res3[3], Array{IDList,1}[], 20, 0.2)
+
 
 # test sequential-rule building algorithm
 @time seqrules3 = sequential_rules(res3, 0.01, 5);
@@ -67,6 +72,9 @@ zaki_rep_data = hcat(rand(letters, n), rand(collect(1:nseq), n), rand(collect(1:
 
 seqs4 = make_sequences(zaki_rep_data, sid_col = 2, eid_col = 3, item_col = 1)
 @time res4 = spade(seqs4, 0.2, 5);
+@code_warntype res4 = spade(seqs4, 0.2, 5);
+
+
 
 
 
@@ -83,3 +91,22 @@ function benchmark1(n)
 end
 
 benchmark1(100)
+
+
+
+function benchmark2(n)
+    nseq = 100
+    ntime = 10
+    maxdepth = 10
+    letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T"]
+
+    dat = hcat(rand(letters, n), rand(collect(1:nseq), n), rand(collect(1:ntime), n))
+    seqs = make_sequences(dat, sid_col = 2, eid_col = 3, item_col = 1);
+    @time x = spade(seqs, 0.2, maxdepth);
+    # display(x)
+    return nothing
+end
+
+benchmark2(1000)
+benchmark2(2000)
+# benchmark2(10_000)        # too long...

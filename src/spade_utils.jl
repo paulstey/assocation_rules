@@ -71,11 +71,11 @@ function rfind(haystack::String, needle::String)
     return UnitRange{Int}(start_idx, stop_idx)
 end
 
+
 function rfind(haystack::String, needle::Char)
     last_idx = findlast(haystack, needle)
     return last_idx
 end
-
 
 
 function unique_items(s::Sequence)
