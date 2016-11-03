@@ -118,7 +118,14 @@ function equality_join(l1, l2, num_sequences)
             end
         end
     end
-    pattern::Array{Array{String, 1}, 1} = [l1.patrn[1:end-1]; [sort([l1.patrn[end]; suffix(l2.patrn)])]]
+    ## type of `pattern` wasn't being infered by compiler
+    # pattern::Array{Array{String, 1}, 1} = [l1.patrn[1:end-1]; [sort([l1.patrn[end]; suffix(l2.patrn)])]]
+
+    ## this method works with type inference
+    patrn_head = l1.patrn[1:end-1]
+    patrn_tail::Array{String,1} = vcat(l1.patrn[end], suffix(l2.patrn))
+    sort!(patrn_tail)
+    pattern = vcat(patrn_head, [patrn_tail])
 
     return IDList(pattern, sids, eids, :event, num_sequences)
 end
@@ -313,8 +320,8 @@ dlist = first_idlist(seq_arr, "d", 2)
 cdlist = first_merge(clist, dlist, 2, 0.1)
 adlist = first_merge(alist, dlist, 2, 0.1)
 
+@code_warntype merge_idlists(adlist[1], cdlist[2], 0.1)
 @code_warntype temporal_join(cdlist[1], adlist[1], Val{:sequence}, Val{:sequence}, 2)
-
 @code_warntype equality_join(cdlist[1], adlist[1], 2)
 
 
@@ -348,6 +355,7 @@ function spade!(f, F, num_sequences, minsupp)
         fk = reduce(vcat, f_tmp)
         push!(F, unique(fk))
     end
+    return nothing  # fixes flag from @code_warntype
 end
 
 
