@@ -182,7 +182,11 @@ function temporal_join(l1, l2, ::Type{Val{:sequence}}, ::Type{Val{:sequence}}, n
         end
     end
     seq_patrn1 = [l1.patrn; [[suffix(l2.patrn)]]]
-    event_patrn::Array{Array{String, 1}, 1} = [l1.patrn[1:end-1]; [sort([l1.patrn[end]; suffix(l2.patrn)])]]
+    patrn_head = l1.patrn[1:end-1]
+    patrn_tail::Array{String,1} = vcat(l1.patrn[end], suffix(l2.patrn))
+    sort!(patrn_tail)
+    event_patrn = vcat(patrn_head, [patrn_tail])
+
     seq_patrn2 = [l2.patrn; [[suffix(l1.patrn)]]]
 
     idlist_arr = IDList[IDList(seq_patrn1,
