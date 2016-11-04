@@ -150,6 +150,27 @@ end
 
 # @code_warntype already_seen([1, 1, 1, 2], [10, 15, 20, 10], [1, 2, 3], [10, 20, 15])
 
+# This is the guts of the function below, which performs
+# a temporal join for those cases in which both id-lists
+# are for sequence patterns.
+function temporal_join!(l1, l2, sids1, eids1, sids2, eids2, sids3, eids3, n, m)
+    for i = 1:n
+        for j = 1:m
+            if l1.sids[i] == l2.sids[j]
+                if l1.eids[i] < l2.eids[j] && !already_seen(l1.sids[i], l2.eids[j], sids1, eids1)
+                    push!(sids1, l1.sids[i])
+                    push!(eids1, l2.eids[j])
+                elseif l2.eids[j] < l1.eids[i] && !already_seen(l2.sids[j], l1.eids[i], sids2, eids2)
+                    push!(sids2, l2.sids[j])
+                    push!(eids2, l1.eids[i])
+                elseif l1.eids[i] == l2.eids[j] && !already_seen(l1.sids[i], l1.eids[i], sids3, eids3) && suffix(l1.patrn) ≠ suffix(l2.patrn)
+                    push!(sids3, l1.sids[i])
+                    push!(eids3, l1.eids[i])
+                end
+            end
+        end
+    end
+end
 
 
 # This function executes a temporal join for those cases
@@ -166,23 +187,9 @@ function temporal_join(l1, l2, ::Type{Val{:sequence}}, ::Type{Val{:sequence}}, n
     n = length(l1.sids)
     m = length(l2.sids)
 
-    for i = 1:n
-        for j = 1:m
-            if l1.sids[i] == l2.sids[j]
-                if l1.eids[i] < l2.eids[j] && !already_seen(l1.sids[i], l2.eids[j], sids1, eids1)
-                    push!(sids1, l1.sids[i])
-                    push!(eids1, l2.eids[j])
-                # elseif l1.eids[i] > l2.eids[j] && !already_seen(l1.sids[i], l1.eids[i], sids2, eids2)
-                elseif l2.eids[j] < l1.eids[i] && !already_seen(l2.sids[j], l1.eids[i], sids2, eids2)
-                    push!(sids2, l2.sids[j])
-                    push!(eids2, l1.eids[i])
-                elseif l1.eids[i] == l2.eids[j] && !already_seen(l1.sids[i], l1.eids[i], sids3, eids3) && suffix(l1.patrn) ≠ suffix(l2.patrn)
-                    push!(sids3, l1.sids[i])
-                    push!(eids3, l1.eids[i])
-                end
-            end
-        end
-    end
+    # this is the workhorse of the function
+    temporal_join!(l1, l2, sids1, eids1, sids2, eids2, sids3, eids3, n, m)
+
     seq_patrn1 = [l1.patrn; [[suffix(l2.patrn)]]]
     patrn_head = l1.patrn[1:end-1]
     patrn_tail::Array{String,1} = vcat(l1.patrn[end], suffix(l2.patrn))
@@ -260,6 +267,16 @@ function first_merge!(l1::IDList, l2::IDList, eq_sids, eq_eids, tm_sids, tm_eids
 end
 
 
+
+
+
+
+
+
+
+
+
+
 # Given two id-lists, this function executes the first
 # merge operation. An array of merged id-list (k = 2)
 # is returned.
@@ -271,8 +288,9 @@ function first_merge(l1::IDList, l2::IDList, num_sequences, minsupp)
     tm_eids = Array{Int, 1}(0)
 
     first_merge!(l1, l2, eq_sids, eq_eids, tm_sids, tm_eids)
-
-    event_patrn = [l1.patrn[1:end-1]; [sort([l1.patrn[end]; suffix(l2.patrn)])]]
+    patrn_tail::Array{String,1} = vcat(l1.patrn[end], suffix(l2.patrn))
+    sort!(patrn_tail)
+    event_patrn = vcat(l1.patrn[1:end-1], [patrn_tail])
     seq_patrn = [l1.patrn; [[suffix(l2.patrn)]]]
 
     event_idlist = IDList(event_patrn, eq_sids, eq_eids, :event, num_sequences)
@@ -324,10 +342,15 @@ dlist = first_idlist(seq_arr, "d", 2)
 
 
 cdlist = first_merge(clist, dlist, 2, 0.1)
+@code_warntype first_merge(clist, dlist, 2, 0.1)
 adlist = first_merge(alist, dlist, 2, 0.1)
 
 @code_warntype merge_idlists(adlist[1], cdlist[2], 0.1)
-@code_warntype temporal_join(cdlist[1], adlist[1], Val{:sequence}, Val{:sequence}, 2)
+@code_warntype temporal_join(cdlist[2], adlist[2], Val{:sequence}, Val{:sequence}, 2)
+@code_warntype temporal_join(cdlist[1], adlist[2], Val{:event}, Val{:sequence}, 2)
+@code_warntype temporal_join(cdlist[2], adlist[1], Val{:sequence}, Val{:event}, 2)
+@code_warntype temporal_join(cdlist[1], adlist[1], Val{:event}, Val{:event}, 2)
+
 
 @time temporal_join(cdlist[1], adlist[1], Val{:sequence}, Val{:sequence}, 2)
 
