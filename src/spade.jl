@@ -440,10 +440,8 @@ function spade!(f, F, num_sequences, minsupp)
         for j = i:n
             # If both are event patterns, we will only merge
             # id-lists when the suffixes are not identical.
-            if f[i].typ == f[j].typ == :event
-                if suffix(f[i].patrn) == suffix(f[j].patrn)
-                    continue
-                end
+            if f[i].typ == f[j].typ == :event && suffix(f[i].patrn) == suffix(f[j].patrn)
+                continue
             elseif prefix(f[i]) == prefix(f[j])
                 idlist_arr = merge_idlists(f[i], f[j], num_sequences)
                 filter!(x -> x.supp ≥ minsupp, idlist_arr)
@@ -458,7 +456,7 @@ function spade!(f, F, num_sequences, minsupp)
         fk = reduce(vcat, f_tmp)
         push!(F, unique(fk))
     end
-    return nothing # this seems to remove flag from @code_warntype 
+    return nothing # this seems to remove flag from @code_warntype
 end
 
 
