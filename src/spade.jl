@@ -156,10 +156,12 @@ end
 # in which both id-lists are for sequence patterns.
 function temporal_join(l1, l2, ::Type{Val{:sequence}}, ::Type{Val{:sequence}}, num_sequences)
     # initialize 3 pairs of empty `sids` and `eids` arrays
-    for i = 1:3, x in ["sids", "eids"]
-        arr = Symbol(string(x, i))
-        @eval $arr = Array{Int,1}(0)
-    end
+    sids1 = Array{Int,1}(0)
+    eids1 = Array{Int,1}(0)
+    sids2 = Array{Int,1}(0)
+    eids2 = Array{Int,1}(0)
+    sids3 = Array{Int,1}(0)
+    eids3 = Array{Int,1}(0)
 
     n = length(l1.sids)
     m = length(l2.sids)
@@ -326,6 +328,9 @@ adlist = first_merge(alist, dlist, 2, 0.1)
 
 @code_warntype merge_idlists(adlist[1], cdlist[2], 0.1)
 @code_warntype temporal_join(cdlist[1], adlist[1], Val{:sequence}, Val{:sequence}, 2)
+
+@time temporal_join(cdlist[1], adlist[1], Val{:sequence}, Val{:sequence}, 2)
+
 @code_warntype equality_join(cdlist[1], adlist[1], 2)
 
 
