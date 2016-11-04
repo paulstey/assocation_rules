@@ -387,6 +387,7 @@ function spade!(f, F, num_sequences, minsupp)
         fk = reduce(vcat, f_tmp)
         push!(F, unique(fk))
     end
+    
     return nothing  # fixes flag from @code_warntype
 end
 
