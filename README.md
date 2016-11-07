@@ -96,7 +96,7 @@ fseq = spade(seqs, 0.1, 6)
 rules = sequential_rules(fseq, 0.1, 6)
 ```   
 ## Current Algorithms
-- _Apriori_ Algortihm (Agrawal & Srikant, 1994)
+- _Apriori_ Algorithm (Agrawal & Srikant, 1994)
 - SPADE Algorithm (Zaki, 2001)
 
 
