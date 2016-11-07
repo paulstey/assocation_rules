@@ -136,12 +136,13 @@ we mean that each row represents a given item in a given sequence at a given
 time. Thus, `dat` must have columns for item, sequence number, and time point
 
 ### Arguments
+* `dat`: a two-dimensional array-type object (i.e., `Array{T,2}` or `DataFrame`)
 * `item_col`: column index for actual item at a given time and in a given sequence.
 * `sid_col`: sequence ID column index
 * `eid_col`: event ID column index
 * `excluded_strings`: vector of strings to be removed from the raw input data
 """
-function make_sequences(dat::Array{Any, 2}; item_col = 1, sid_col = 2, eid_col = 3, excluded_strings = ["{", "}", ", "])
+function make_sequences(dat; item_col = 1, sid_col = 2, eid_col = 3, excluded_strings = ["{", "}", ", "])
     seq_ids = unique(dat[:, sid_col])
     num_seqs = length(seq_ids)
     seq_arr = Array{Sequence, 1}(num_seqs)
