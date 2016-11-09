@@ -301,8 +301,6 @@ end
 
 
 
-a = [["a"], ["b"]]
-b = [["a"], ["b"], ["cd"], ["e"]]
 
 function postfix(root::Array{Array{String,1},1}, descendant::Array{Array{String,1},1})
     post = Array{Array{String,1},1}(0)
@@ -323,7 +321,9 @@ function postfix(root::Array{Array{String,1},1}, descendant::Array{Array{String,
     post
 end
 
-postfix(a, b)
+# a = [["a"], ["b"]]
+# b = [["a"], ["b"], ["cd"], ["e"]]
+# postfix(a, b)
 
 
 

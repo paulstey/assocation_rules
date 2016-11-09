@@ -321,40 +321,40 @@ end
 
 
 
-s1 = Sequence(
-    1,
-    [1, 2, 3, 4, 5, 6],
-    [["a", "b", "d"], ["a", "e"], ["a", "b", "e"], ["b", "c", "d"], ["b", "c"], ["b", "d"]])
-
-s2 = Sequence(
-    2,
-    [1, 2, 3, 4, 5],
-    [["a", "c", "d"], ["a"], ["a", "b", "d"], ["a", "b"], ["b", "d"]])
-
-
-seq_arr = [s1, s2]
-alist = first_idlist(seq_arr, "a", 2)
-clist = first_idlist(seq_arr, "c", 2)
-dlist = first_idlist(seq_arr, "d", 2)
-
-@code_warntype first_idlist(seq_arr, "d", 2)
-@time first_idlist(seq_arr, "d", 2);
-
-
-cdlist = first_merge(clist, dlist, 2, 0.1)
-@code_warntype first_merge(clist, dlist, 2, 0.1)
-adlist = first_merge(alist, dlist, 2, 0.1)
-
-@code_warntype merge_idlists(adlist[1], cdlist[2], 0.1)
-@code_warntype temporal_join(cdlist[2], adlist[2], Val{:sequence}, Val{:sequence}, 2)
-@code_warntype temporal_join(cdlist[1], adlist[2], Val{:event}, Val{:sequence}, 2)
-@code_warntype temporal_join(cdlist[2], adlist[1], Val{:sequence}, Val{:event}, 2)
-@code_warntype temporal_join(cdlist[1], adlist[1], Val{:event}, Val{:event}, 2)
-
-
-@time temporal_join(cdlist[1], adlist[1], Val{:sequence}, Val{:sequence}, 2)
-
-@code_warntype equality_join(cdlist[1], adlist[1], 2)
+# s1 = Sequence(
+#     1,
+#     [1, 2, 3, 4, 5, 6],
+#     [["a", "b", "d"], ["a", "e"], ["a", "b", "e"], ["b", "c", "d"], ["b", "c"], ["b", "d"]])
+#
+# s2 = Sequence(
+#     2,
+#     [1, 2, 3, 4, 5],
+#     [["a", "c", "d"], ["a"], ["a", "b", "d"], ["a", "b"], ["b", "d"]])
+#
+#
+# seq_arr = [s1, s2]
+# alist = first_idlist(seq_arr, "a", 2)
+# clist = first_idlist(seq_arr, "c", 2)
+# dlist = first_idlist(seq_arr, "d", 2)
+#
+# @code_warntype first_idlist(seq_arr, "d", 2)
+# @time first_idlist(seq_arr, "d", 2);
+#
+#
+# cdlist = first_merge(clist, dlist, 2, 0.1)
+# @code_warntype first_merge(clist, dlist, 2, 0.1)
+# adlist = first_merge(alist, dlist, 2, 0.1)
+#
+# @code_warntype merge_idlists(adlist[1], cdlist[2], 0.1)
+# @code_warntype temporal_join(cdlist[2], adlist[2], Val{:sequence}, Val{:sequence}, 2)
+# @code_warntype temporal_join(cdlist[1], adlist[2], Val{:event}, Val{:sequence}, 2)
+# @code_warntype temporal_join(cdlist[2], adlist[1], Val{:sequence}, Val{:event}, 2)
+# @code_warntype temporal_join(cdlist[1], adlist[1], Val{:event}, Val{:event}, 2)
+#
+#
+# @time temporal_join(cdlist[1], adlist[1], Val{:sequence}, Val{:sequence}, 2)
+#
+# @code_warntype equality_join(cdlist[1], adlist[1], 2)
 
 
 
@@ -387,7 +387,7 @@ function spade!(f, F, num_sequences, minsupp)
         fk = reduce(vcat, f_tmp)
         push!(F, unique(fk))
     end
-    
+
     return nothing  # fixes flag from @code_warntype
 end
 
