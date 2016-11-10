@@ -269,14 +269,6 @@ end
 
 
 
-
-
-
-
-
-
-
-
 # Given two id-lists, this function executes the first
 # merge operation. An array of merged id-list (k = 2)
 # is returned.
