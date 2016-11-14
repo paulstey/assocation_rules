@@ -21,7 +21,7 @@ matrix is now an element of the vector. This is used
 for pre-processing data prior to applying the a-priori
 algorithm for association rule mining.
 """
-function make_transactions{T<:AbstractArray}(X::T)
+function make_transactions(X::Array{Any,2})
     n, p = size(X)
     X = map(string, X)
 
@@ -31,6 +31,23 @@ function make_transactions{T<:AbstractArray}(X::T)
     end
     return out
 end
+
+
+function make_transactions(X::DataFrame)
+    n, p = size(X)
+    Xstr = Array{String}(n, p)
+    for j = 1:p
+        Xstr[:, j] = map(string, X[:, j])
+    end
+
+    out = Array{Array{String, 1}, 1}(n)
+    for i = 1:n
+        out[i] = convert(Array{String, 1}, Xstr[i, :])
+    end
+    return out
+end
+
+
 
 
 function wrap_line(v, maxchar)
@@ -195,7 +212,7 @@ This is a convenience function whose only purpose is to load example datasets pr
 ### Arguments
 * `dataset_name`: A string specifying the dataset to be loaded (e.g., "zaki_data", "adult", etc).
 
-The returned value will be a dataframe. 
+The returned value will be a dataframe.
 """
 function dataset(dataset_name::AbstractString)
     filename = joinpath(dirname(@__FILE__), "..", "data", "$dataset_name.csv")
