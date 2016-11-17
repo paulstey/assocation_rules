@@ -12,15 +12,15 @@ rules1 = apriori(transactions, 0.1, 0.4, false);        # false for only single-
 display(rules1)
 
 # reading data from .csv
-adult_data = readcsv("../data/adult.csv", skipstart = 1)
+adult_data = dataset("adult")
 adult_trans = make_transactions(adult_data[1:1000, :])  # take only sub-set of data for convenience
-rules2 = apriori(adult_trans, 0.2, 0.8)
+@time rules2 = apriori(adult_trans, 0.2, 0.8);         
 display(rules2)
 
 
 
 # testing SPADE algorithm
-zaki_data = readcsv("../data/zaki_data.csv", skipstart = 1)
+zaki_data = dataset("zaki_data")
 seqs = make_sequences(zaki_data, sid_col = 2, eid_col = 3, item_col = 1)
 @time res = spade(seqs, 0.2, 20);
 
@@ -31,16 +31,21 @@ seqs = make_sequences(zaki_data, sid_col = 2, eid_col = 3, item_col = 1)
 @assert length(res[5]) == 743
 @assert length(res[6]) == 897
 @assert length(res[7]) == 784
+@assert length(res[8]) == 494
+@assert length(res[9]) == 220
+@assert length(res[10]) == 66
+@assert length(res[11]) == 12
+@assert length(res[12]) == 1
 
 
 # testing SPADE algorithm with subset of Zaki data
-zaki_data = readcsv("../data/zaki_subset_data.csv", skipstart = 1)
+zaki_data = dataset("zaki_subset_data")
 seqs2 = make_sequences(zaki_data, sid_col = 2, eid_col = 3, item_col = 1)
 @time res2 = spade(seqs2, 0.2, 6);
 
 
 # test sequential-rule building algorithm
-seqrules = sequential_rules(res, 0.01, 5)
+seqrules = sequential_rules(res, 0.01, 12)
 @assert length(seqrules) == 3886
 
 seqrules2 = sequential_rules(res2, 0.01, 5)
@@ -52,6 +57,8 @@ seqrules2 = sequential_rules(res2, 0.01, 5)
 zaki_data = readcsv("../data/zaki_data_extra.csv", skipstart = 1)
 seqs3 = make_sequences(zaki_data, sid_col = 2, eid_col = 3, item_col = 1)
 @time res3 = spade(seqs3, 0.2, 5);
+
+@code_warntype spade!(res3[3], Array{IDList,1}[], 20, 0.2)
 
 
 # test sequential-rule building algorithm
