@@ -14,7 +14,7 @@ display(rules1)
 # reading data from .csv
 adult_data = dataset("adult")
 adult_trans = make_transactions(adult_data[1:1000, :])  # take only sub-set of data for convenience
-@time rules2 = apriori(adult_trans, 0.2, 0.8);         
+@time rules2 = apriori(adult_trans, 0.2, 0.8);          # takes about 26 sec.  
 display(rules2)
 
 
