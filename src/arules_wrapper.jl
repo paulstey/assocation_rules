@@ -5,6 +5,9 @@ using RCall
 
 function init_arules()
     R"""
+    if (\"arules\" %in% install.packages() == FALSE) {
+        install.packages(\"arules\", dependencies = TRUE, repos = \"http://cran.r-project.org\")
+    }
     library(arules)
 
     all_factors <- function(dat) {
@@ -31,13 +34,15 @@ function make_transactions(dat::DataFrame, transact_name::String, arules = true)
 end
 
 
-function apriori(transact_name, supp = 0.2, conf = 0.01)
+function apriori(transact_name::String, supp = 0.2, conf = 0.01)
     rcode = "
-    apriori($transact_name, parameter = list(supp = $supp,
-                                             conf = $conf,
-                                             target = \"rules\"))
+    rules1 <- apriori($transact_name, parameter = list(supp = $supp,
+                                                       conf = $conf,
+                                                       target = \"rules\"))
+    rules2 <- if (length(rules1) == 0) data.frame() else rules1
     "
     reval(rcode);
+    @rget rules2
 end
 
 apriori("t1");
