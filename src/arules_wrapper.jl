@@ -22,7 +22,7 @@ function init_arules()
         p <- ncol(dat)
         out <- dat
         for (j in 1:p) {
-            out[, j] <- factor(dat[[j]])
+            out[, j] <- factor(dat[, j])
         }
         return(out)
     }
@@ -91,6 +91,7 @@ function split_rule!(dat)
         dat[i, :lhs], dat[i, :rhs] = split(dat[i, :rules], " => ")
     end
 end
+
 
 function apriori(transact_name::String, supp = 0.2, conf = 0.01)
     rcode = "
