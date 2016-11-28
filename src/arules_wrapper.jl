@@ -4,6 +4,14 @@ using RCall
 
 
 function init_arules()
+    reval(:sum, [1, 2, 3])
+    R"""
+    test1p1 <- 1 + 1
+    """
+    if 2 != @rget test1p1
+        stop("You must have R installed in order to use this package")
+    end
+
     R"""
     if (\"arules\" %in% install.packages() == FALSE) {
         install.packages(\"arules\", dependencies = TRUE, repos = \"http://cran.r-project.org\")
