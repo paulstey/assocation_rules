@@ -5,3 +5,4 @@
 *.jl.mem
 *.R
 ptree.c
+.Rhistory

@@ -95,9 +95,12 @@ end
 
 function apriori(transact_name::String, supp = 0.2, conf = 0.01)
     rcode = "
-    rules1 <- apriori($transact_name, parameter = list(supp = $supp,
-                                                       conf = $conf,
-                                                       target = \"rules\"))
+    rules1 <- apriori($transact_name,
+                      parameter = list(supp = $supp,
+                                       conf = $conf,
+                                       target = \"rules\"),
+                      control = list(verbose = FALSE))
+                      
     rules2 <- if (length(rules1) == 0) data.frame() else rules1
     rules3 <- character_columns(as(rules2, \"data.frame\"))
     "
