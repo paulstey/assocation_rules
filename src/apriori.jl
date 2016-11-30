@@ -161,7 +161,7 @@ function frequent{M}(T::Array{Array{M, 1}, 1}, minsup::Float64)
 
     persist = true
     while persist
-        C_k = apriori_gen(F[end]) # Generate candidate set C_k from F_{k-1}
+        C_k = apriori_gen(F[end]) # Generate candidates for F_k from F_{k-1}
         F_k = filter(c -> σ(c, T) ≥ min_n, C_k)
         if !isempty(F_k)
             push!(F, F_k) # Eliminate infrequent candidates, then set to F_k
