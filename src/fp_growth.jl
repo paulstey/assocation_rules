@@ -11,6 +11,13 @@ type FPNode
         kids = Array{FPNode,1}(0)
         return new(value, count, parent, kids)
     end
+
+    function FPNode()
+        x = new("", 100_000_000_000)
+        x.children = Array{FPNode,1}(0)
+        x.parent = x
+        x
+    end
 end
 
 
@@ -80,4 +87,27 @@ function build_header_table(frequent)
 end
 
 
-function build_fptree(FPTree, transactions, rootvalue, rootcount, frequent, headers)
+function build_fptree(tree::FPTree, transactions, rootvalue, rootcount, frequent, headers)
+    root = FPNode()
+
+    for transaction in transactions
+        for x in transaction
+            if x ∈ keys(frequent)
+                push!(sorted_items, x)
+            end
+        end
+        sort!(sorted_items, by = x -> frequent[x], rev = true)
+
+        if length(sorted_items) > 0
+            insert_tree!(tree, sorted_items, root, headers)
+        end
+    end
+    root
+end
+
+
+function insert_tree!(tree::FPTree, items, node, headers)
+    # recursively grow FP tree
+    first = items[1]
+    child = get_child(tree, first)
+    
