@@ -1,4 +1,4 @@
-module AssociationRules
+module AssociationRuleMining
 
 using Formatting
 using Base.Threads

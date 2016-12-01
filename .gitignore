@@ -4,5 +4,6 @@
 *.jl.*.cov
 *.jl.mem
 *.R
+*.py
 ptree.c
 .Rhistory
