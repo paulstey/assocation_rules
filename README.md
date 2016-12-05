@@ -1,6 +1,6 @@
 # association_rules_julia
-[![Build Status](https://travis-ci.org/bcbi/AssociationRules.jl.svg?branch=master)](https://travis-ci.org/bcbi/AssociationRules.jl)
-[![codecov](https://codecov.io/gh/bcbi/AssociationRules.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/bcbi/AssociationRules.jl)
+[![Build Status](https://travis-ci.org/bcbi/association_rules_jl.jl.svg?branch=master)](https://travis-ci.org/bcbi/association_rules_jl)
+[![codecov](https://codecov.io/gh/bcbi/association_rules_jl.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/bcbi/association_rules_jl)
 
 
 
@@ -13,7 +13,7 @@ Note that a portion of our implementation of the _Apriori_ algorithm was adapted
 
 ## Initial Setup
 ```{Julia}
-Pkg.clone("https://github.com/bcbi/AssociationRules.jl.git")
+Pkg.clone("https://github.com/bcbi/association_rules_jl.git")
 ```
 
 ## Examples
