@@ -15,25 +15,41 @@ type FPNode
 
     function FPNode()
         # this method is for root node initialization
-        x = new("", 100_000_000_000)                # FIXME: don't use arbitrarily large count
+        x = new("", 0)                   # FIXME: fix this shortcut
         x.children = Array{FPNode,1}(0)
         x.parent = x
-        x
+        return x
     end
 end
 
 
 type FPTree
     frequent
-    headers
+    headers::Dict{String,FPNode}
     root
 
-
+    # This methods is dispatched for the initial
+    # creation of the FP tree.
     function FPTree(transactions, threshold)
         frequent = find_frequent_items(transactions, threshold)
         headers = build_header_table(frequent)
+        res = new(frequent, headers)
+        res.root = build_fptree!(res,
+                                transactions,
+                                "",
+                                0,
+                                frequent,
+                                headers)
+        return res
+    end
 
-        root = build_fptree(transactions,
+    function FPTree(tree, transactions, threshold, root_value, root_count)
+
+        frequent = find_frequent_items(transactions, threshold)
+        headers = build_header_table(frequent)
+
+        root = build_fptree!(tree,
+                            transactions,
                             root_value,
                             root_count,
                             frequent,
@@ -42,10 +58,7 @@ type FPTree
         res = new(frequent, headers, root)
         return res
     end
-
-    function FPTree(transactions, threshold, )
 end
-
 
 
 function has_child(pnode::FPNode, value)
@@ -59,20 +72,22 @@ function has_child(pnode::FPNode, value)
     res
 end
 
+
 # NOTE: This function needs re-thinking since
-# it can return either a child node or `nothing`
+# it can return either a child node or `nothing`.
+# IDEA: only call get_child() when we have already
+# confirmed its existence with has_child().
 function get_child(pnode::FPNode, value)
-    res = nothing
+    # res = nothing
     for child in pnode.children
         if child.value == value
-            res = child
+            return child
         end
     end
-    res
 end
 
-# This function might render the above get_child!()
-# unnecessary since.
+# FIXME: This function might render the above
+# get_child() unnecessary.
 function increment_child!(pnode::FPNode, value)
     for child in pnode.children
         if child.value == value
@@ -81,6 +96,7 @@ function increment_child!(pnode::FPNode, value)
         end
     end
 end
+
 
 function add_child!(pnode::FPNode, value)
     child = FPNode(value, 1, pnode)
@@ -116,10 +132,13 @@ function build_header_table(frequent)
 end
 
 
-function build_fptree(tree::FPTree, transactions, rootvalue, rootcount, frequent, headers)
+# This method is to be dispatched on creation of the actual
+# root of the tree (i.e., the first node, which has no parent).
+function build_fptree!(tree::FPTree, transactions, root_value, root_count, frequent, headers)
     root = FPNode()
 
     for transaction in transactions
+        sorted_items = Array{String,1}(0)
         for x in transaction
             if x ∈ keys(frequent)
                 push!(sorted_items, x)
@@ -134,22 +153,26 @@ function build_fptree(tree::FPTree, transactions, rootvalue, rootcount, frequent
     root
 end
 
+
 function insert_tree!(tree::FPTree, items, node, headers)
     # recursively grow FP tree
     first = items[1]
 
     if has_child(node, first)
         increment_child!(node, first)           # increment existing child counter
+        child = get_child(node, first)
     else
         add_child!(node, first)                 # add new child
         child = last(node.children)             # child we just inserted
 
-        # Now we link newly created node to
-        # the header structure.
-        if !haskey(headers, first)
+        # Now we link the newly created node
+        # to the header structure.
+        if headers[first] == nothing
             headers[first] = child
         else
+            display(headers)
             current = headers[first]
+            println(typeof(current))
             while isdefined(current, :link)
                 current = current.link
             end
@@ -237,8 +260,19 @@ function mine_sub_trees(tree, threshold)
     # Get items in tree in reverse order of occurrences.
     for item in mining_order
         suffixes = Array{String,1}(0)
-        conditional_tree_input = []             # note replace this with type-specific array
+        conditional_tree_input = []          # NOTE:replace this with type-specific array
         node = tree.headers[item]
+
+        # FIXME: could `node` be null before this?
+        persist = true
+        while persist
+            push!(suffixes, node)
+            if isdefined(node, :link)
+                node = node.link
+            else
+                persist = false
+            end
+        end
 
         # follow node links to get a list of
         # all occurences of a certain item
@@ -259,7 +293,12 @@ function mine_sub_trees(tree, threshold)
 
         # Now we have the input for a subtree,
         # so construct it and grab the patterns.
-        subtree = FPTree(conditional_tree_input, threshold, item, tree.frequent[item])
+        subtree = FPTree(tree,
+                         conditional_tree_input,
+                         threshold,
+                         item,
+                         tree.frequent[item])
+
         subtree_patterns = mine_patterns(subtree, threshold)
 
         # Insert subtree patterns into main patterns dictionary.
@@ -280,3 +319,5 @@ end
 # over the specified support threshold.
 function find_frequent_patterns(transactions, support_threshold)
     tree = FPTree(transactions, support_threshold)
+    return mine_patterns(tree, support_threshold)
+end
