@@ -16,7 +16,7 @@ type FPNode
     end
 
     function FPNode()
-        warn("CALLING FPNode() FOR ROOT CASE")
+        # warn("CALLING FPNode() FOR ROOT CASE")
         # this method is for root node initialization
         x = new(ROOT_STRING, 0)                  # FIXME: cheap shortcut
         x.children = Array{FPNode,1}(0)
@@ -173,9 +173,9 @@ function insert_tree!(tree::FPTree, items, node, headers)
         if headers[first] == nothing
             headers[first] = child
         else
-            display(headers)
+            # display(headers)
             current = headers[first]
-            println(typeof(current))
+            # println(typeof(current))
             while isdefined(current, :link)
                 current = current.link
             end
@@ -291,7 +291,7 @@ function mine_sub_trees(tree, threshold)
             parent = suffix.parent
 
             while isdefined(parent, :parent) && parent.value != ROOT_STRING
-                println(parent.value)
+                # println(parent.value)
                 push!(path, parent.value)
                 parent = parent.parent
             end
@@ -315,14 +315,7 @@ function mine_sub_trees(tree, threshold)
 
         # Insert subtree patterns into main patterns dictionary.
         for pattern in keys(subtree_patterns)
-            if pattern ∈ keys(patterns)
-                patterns[pattern] += subtree_patterns[pattern]
-            else
-                patterns[pattern] = subtree_patterns[pattern]
-            end
-
-            # This approach eliminates need for if/else
-            # patterns[pattern] = get(patterns, pattern, 0) + subtree_patterns[pattern]
+            patterns[pattern] = get(patterns, pattern, 0) + subtree_patterns[pattern]
         end
 
     end
@@ -359,4 +352,4 @@ transacts = [["a", "b", "c"],
              ["a", "b", "c", "d"],
              ["c", "d", "e"]]
 
-find_frequent_patterns(transacts, 0.001)
+res = find_frequent_patterns(transacts, 0.001)
