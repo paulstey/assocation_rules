@@ -18,10 +18,10 @@ type FPNode
         return new(value, count, parent, kids)
     end
 
-    function FPNode()
+    function FPNode(value, count)
         # warn("CALLING FPNode() FOR ROOT CASE")
         # this method is for root node initialization
-        x = new(ROOT_STRING, 0)                  # FIXME: cheap shortcut
+        x = new(value, count)                  # FIXME: cheap shortcut
         x.children = Array{FPNode,1}(0)
         x.parent = x
         return x
@@ -143,7 +143,7 @@ end
 # This method is to be dispatched on creation of the actual
 # root of the tree (i.e., the first node, which has no parent).
 function build_fptree!(tree::FPTree, transactions, root_value, root_count, frequent, headers)
-    root = FPNode()
+    root = FPNode(root_value, root_count)
 
     for transaction in transactions
         sorted_items = Array{String,1}(0)
@@ -215,6 +215,7 @@ end
 # Mine the constructed FP tree for patterns
 function mine_patterns(tree, threshold)
     if tree_has_single_path(tree, tree.root)
+        println("came down this path")
         return generate_pattern_list(tree)
     else
         subtrees = mine_sub_trees(tree, threshold)
@@ -229,6 +230,8 @@ end
 function zip_patterns(tree, patterns)
     if isdefined(tree.root, :value)
         suffix = tree.root.value
+
+        println("\n---SUFFIX is: $suffix")
 
         if suffix ≠ ROOT_STRING
             new_patterns = OrderedDict{Array{String,1},Int}()
@@ -248,21 +251,26 @@ end
 # Generate a list of patterns with support counts
 function generate_pattern_list(tree)
     patterns = OrderedDict{Array{String,1},Int}()
-
     items = collect(keys(tree.frequent))
 
+    println(tree.root.value)
     # If we are in a conditional tree,
     # the suffix is a pattern on its own.
     if !isdefined(tree.root, :value) || tree.root.value == ROOT_STRING
+        println("hit this")
         suffix_value = Array{String,1}(0)
     else
         suffix_value = [tree.root.value]
+        println("suffix value: ", suffix_value)
         patterns[suffix_value] = tree.root.count
     end
 
     for i in 1:length(items)
         for subset in collect(combinations(items, i))
+            display(subset)
             pattern = sort(vcat(subset, suffix_value))
+            println("...")
+            display(pattern)
             patterns[pattern] = minimum([tree.frequent[x] for x in subset])
         end
     end
@@ -283,11 +291,10 @@ function mine_sub_trees(tree, threshold)
     for item in mining_order
         println("recursive depth: ", recursive_depth)
         println("item: ", item)
-        # display(patterns)
+        display(patterns)
         suffixes = []
         conditional_tree_input = []          # NOTE:replace this with type-specific array
         node = tree.headers[item]
-        # println("node: ", node.value)        # NOTE: same as python here
 
         # persist = true
         # while persist
@@ -327,11 +334,13 @@ function mine_sub_trees(tree, threshold)
             frequency = suffix.count
             path = []
             parent = suffix.parent
-
-            while isdefined(parent, :parent) && parent.value != ROOT_STRING
+            j = 1
+            while parent ≠ parent.parent
+                println(j)
                 # display(parent.value)        # NOTE: same as python here
                 push!(path, parent.value)
                 parent = parent.parent
+                j += 1
             end
             println(suffix.value, " frequency: ", frequency)
             for i = 0:(frequency-1)
@@ -349,6 +358,7 @@ function mine_sub_trees(tree, threshold)
                          tree.frequent[item])
 
         # display(subtree.frequent)
+        println(subtree.root.value)
         subtree_patterns = mine_patterns(subtree, threshold)
         # println(length(subtree_patterns))
         # display(subtree_patterns)
@@ -373,11 +383,11 @@ end
 
 
 # testing FP growth in Julia
-# using Gallium
-
-
-n1 = FPNode()
-n2 = FPNode("a", 3, n1)
+using Gallium
+find_frequent_patterns(transacts, 0.001)
+#
+# n1 = FPNode()
+# n2 = FPNode("a", 3, n1)
 # @code_warntype FPNode()
 # @code_warntype FPNode("a", 3, n1)
 
