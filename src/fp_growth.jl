@@ -2,8 +2,7 @@
 using Combinatorics
 using DataStructures
 
-const ROOT_STRING = "{}"
-global recursive_depth = 0
+const ROOT_STRING = "{}"                      # FIXME: hacky and fragile
 
 
 type FPNode
@@ -19,8 +18,7 @@ type FPNode
     end
 
     function FPNode(value, count)
-        # warn("CALLING FPNode() FOR ROOT CASE")
-        # this method is for root node initialization
+        # This method is for root node initialization
         x = new(value, count)                  # FIXME: cheap shortcut
         x.children = Array{FPNode,1}(0)
         x.parent = x
@@ -50,11 +48,8 @@ type FPTree
     end
 
     function FPTree(tree, transactions, threshold, root_value, root_count)
-
         frequent = find_frequent_items(transactions, threshold)
         headers = build_header_table(frequent)
-
-
         root = build_fptree!(tree,
                              transactions,
                              root_value,
@@ -126,7 +121,6 @@ function find_frequent_items(transactions, threshold)
             delete!(items, k)
         end
     end
-    println("items list: ", items)
     items
 end
 
@@ -169,9 +163,6 @@ function insert_tree!(tree::FPTree, items, node, headers)
     if has_child(node, first_item)
         increment_child!(node, first_item)           # increment existing child counter
         child = get_child(node, first_item)
-
-        println("child node $(child.value) has count $(child.count)")
-
     else
         add_child!(node, first_item)                 # add new child
         child = last(node.children)             # child we just inserted
@@ -181,9 +172,7 @@ function insert_tree!(tree::FPTree, items, node, headers)
         if headers[first_item] == nothing
             headers[first_item] = child
         else
-            # display(headers)
             current = headers[first_item]
-            # println(typeof(current))
             while isdefined(current, :link)
                 current = current.link
             end
@@ -215,11 +204,9 @@ end
 # Mine the constructed FP tree for patterns
 function mine_patterns(tree, threshold)
     if tree_has_single_path(tree, tree.root)
-        println("came down this path")
         return generate_pattern_list(tree)
     else
         subtrees = mine_sub_trees(tree, threshold)
-        # display(subtrees)
         return zip_patterns(tree, subtrees)
     end
 end
@@ -230,8 +217,6 @@ end
 function zip_patterns(tree, patterns)
     if isdefined(tree.root, :value)
         suffix = tree.root.value
-
-        println("\n---SUFFIX is: $suffix")
 
         if suffix ≠ ROOT_STRING
             new_patterns = OrderedDict{Array{String,1},Int}()
@@ -253,24 +238,18 @@ function generate_pattern_list(tree)
     patterns = OrderedDict{Array{String,1},Int}()
     items = collect(keys(tree.frequent))
 
-    println(tree.root.value)
     # If we are in a conditional tree,
     # the suffix is a pattern on its own.
     if !isdefined(tree.root, :value) || tree.root.value == ROOT_STRING
-        println("hit this")
         suffix_value = Array{String,1}(0)
     else
         suffix_value = [tree.root.value]
-        println("suffix value: ", suffix_value)
         patterns[suffix_value] = tree.root.count
     end
 
     for i in 1:length(items)
         for subset in collect(combinations(items, i))
-            display(subset)
             pattern = sort(vcat(subset, suffix_value))
-            println("...")
-            display(pattern)
             patterns[pattern] = minimum([tree.frequent[x] for x in subset])
         end
     end
@@ -279,41 +258,19 @@ end
 
 
 function mine_sub_trees(tree, threshold)
-    global recursive_depth += 1
     patterns = OrderedDict{Array{String,1},Int}()
     xkeys = collect(keys(tree.frequent))
-    display(tree.frequent)                      # FIXME: disagrees with python here
     mining_order = sort(xkeys, by = x -> tree.frequent[x])
-
-    println(mining_order)
 
     # Get items in tree in reverse order of occurrences.
     for item in mining_order
-        println("recursive depth: ", recursive_depth)
-        println("item: ", item)
-        display(patterns)
         suffixes = []
         conditional_tree_input = []          # NOTE:replace this with type-specific array
         node = tree.headers[item]
 
-        # persist = true
-        # while persist
-        #     push!(suffixes, node)
-        #     display(node.value)
-        #     println(node.count)
-        #     if isdefined(node, :link)
-        #         node = node.link
-        #     else
-        #         push!(suffixes, node)
-        #         persist = false
-        #     end
-        # end
-
         persist = true
         while persist
             push!(suffixes, node)
-            display(node.value)
-            println(node.count)
             if isdefined(node, :link)
                 node = node.link
             else
@@ -322,33 +279,22 @@ function mine_sub_trees(tree, threshold)
             end
         end
 
-
-
-
-
-        println("suffixes length: ", length(suffixes))
-        # follow node links to get a list of
+        # Follow node links to get a list of
         # all occurences of a certain item
         for suffix in suffixes
-
             frequency = suffix.count
             path = []
             parent = suffix.parent
             j = 1
             while parent ≠ parent.parent
-                println(j)
-                # display(parent.value)        # NOTE: same as python here
                 push!(path, parent.value)
                 parent = parent.parent
                 j += 1
             end
-            println(suffix.value, " frequency: ", frequency)
-            for i = 0:(frequency-1)
-                # println(i)
+            for i = 1:frequency
                 push!(conditional_tree_input, path)
             end
         end
-        display(conditional_tree_input)
         # Now we have the input for a subtree,
         # so construct it and grab the patterns.
         subtree = FPTree(tree,
@@ -357,15 +303,10 @@ function mine_sub_trees(tree, threshold)
                          item,
                          tree.frequent[item])
 
-        # display(subtree.frequent)
-        println(subtree.root.value)
         subtree_patterns = mine_patterns(subtree, threshold)
-        # println(length(subtree_patterns))
-        # display(subtree_patterns)
 
         # Insert subtree patterns into main patterns dictionary.
         for pattern in keys(subtree_patterns)
-            # display(patterns)
             patterns[pattern] = get(patterns, pattern, 0) + subtree_patterns[pattern]
         end
 
@@ -384,7 +325,6 @@ end
 
 # testing FP growth in Julia
 using Gallium
-find_frequent_patterns(transacts, 0.001)
 #
 # n1 = FPNode()
 # n2 = FPNode("a", 3, n1)
@@ -404,3 +344,18 @@ transacts = [["a", "b", "c"],
              ["c", "d", "e"]]
 
 res = find_frequent_patterns(transacts, 0.001)
+
+
+transacts2 = [["a", "b", "c"],
+             ["a", "c", "d", "e"],
+             ["b", "e"],
+             ["b", "a", "c"],
+             ["c", "d"],
+             ["a", "b"],
+             ["d", "c", "e"],
+             ["a", "b", "c", "d"],
+             ["c", "d", "e"],
+             ["d", "c", "e", "f", "g"],
+             ["g", "a", "b", "c", "d"],
+             ["b", "f", "c", "d", "e"]]
+@time res2 = find_frequent_patterns(transacts2, 0.001)
