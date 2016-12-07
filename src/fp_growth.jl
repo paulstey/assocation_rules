@@ -1,7 +1,10 @@
 # translate pyfpgrowth
 using Combinatorics
+using DataStructures
 
 const ROOT_STRING = "{}"
+global recursive_depth = 0
+
 
 type FPNode
     value::String
@@ -51,6 +54,7 @@ type FPTree
         frequent = find_frequent_items(transactions, threshold)
         headers = build_header_table(frequent)
 
+
         root = build_fptree!(tree,
                              transactions,
                              root_value,
@@ -94,7 +98,7 @@ end
 function increment_child!(pnode::FPNode, value)
     for child in pnode.children
         if child.value == value
-            pnode.count += 1
+            child.count += 1
             break
         end
     end
@@ -109,11 +113,11 @@ end
 
 # Create Dict of items with occurrences above threshold.
 function find_frequent_items(transactions, threshold)
-    items = Dict{String,Int}()
+    items = OrderedDict{String,Int}()
 
     for transaction in transactions
-        for itm in transaction
-            items[itm] = get(items, itm, 0) + 1
+        for item in transaction
+            items[item] = get(items, item, 0) + 1
         end
     end
 
@@ -122,12 +126,13 @@ function find_frequent_items(transactions, threshold)
             delete!(items, k)
         end
     end
+    println("items list: ", items)
     items
 end
 
 
 function build_header_table(frequent)
-    headers = Dict()
+    headers = OrderedDict()
     for k in keys(frequent)
         headers[k] = nothing
     end
@@ -159,22 +164,25 @@ end
 
 function insert_tree!(tree::FPTree, items, node, headers)
     # recursively grow FP tree
-    first = items[1]
+    first_item = first(items)
 
-    if has_child(node, first)
-        increment_child!(node, first)           # increment existing child counter
-        child = get_child(node, first)
+    if has_child(node, first_item)
+        increment_child!(node, first_item)           # increment existing child counter
+        child = get_child(node, first_item)
+
+        println("child node $(child.value) has count $(child.count)")
+
     else
-        add_child!(node, first)                 # add new child
+        add_child!(node, first_item)                 # add new child
         child = last(node.children)             # child we just inserted
 
         # Now we link the newly created node
         # to the header structure.
-        if headers[first] == nothing
-            headers[first] = child
+        if headers[first_item] == nothing
+            headers[first_item] = child
         else
             # display(headers)
-            current = headers[first]
+            current = headers[first_item]
             # println(typeof(current))
             while isdefined(current, :link)
                 current = current.link
@@ -210,6 +218,7 @@ function mine_patterns(tree, threshold)
         return generate_pattern_list(tree)
     else
         subtrees = mine_sub_trees(tree, threshold)
+        # display(subtrees)
         return zip_patterns(tree, subtrees)
     end
 end
@@ -222,7 +231,7 @@ function zip_patterns(tree, patterns)
         suffix = tree.root.value
 
         if suffix ≠ ROOT_STRING
-            new_patterns = Dict{Array{String,1},Int}()
+            new_patterns = OrderedDict{Array{String,1},Int}()
 
             for k in keys(patterns)
                 xpattern = vcat(k, suffix)
@@ -238,7 +247,7 @@ end
 
 # Generate a list of patterns with support counts
 function generate_pattern_list(tree)
-    patterns = Dict{Array{String,1},Int}()
+    patterns = OrderedDict{Array{String,1},Int}()
 
     items = collect(keys(tree.frequent))
 
@@ -262,45 +271,75 @@ end
 
 
 function mine_sub_trees(tree, threshold)
-    patterns = Dict{Array{String,1},Int}()
+    global recursive_depth += 1
+    patterns = OrderedDict{Array{String,1},Int}()
     xkeys = collect(keys(tree.frequent))
+    display(tree.frequent)                      # FIXME: disagrees with python here
     mining_order = sort(xkeys, by = x -> tree.frequent[x])
+
+    println(mining_order)
 
     # Get items in tree in reverse order of occurrences.
     for item in mining_order
+        println("recursive depth: ", recursive_depth)
+        println("item: ", item)
+        # display(patterns)
         suffixes = []
         conditional_tree_input = []          # NOTE:replace this with type-specific array
         node = tree.headers[item]
+        # println("node: ", node.value)        # NOTE: same as python here
 
-        # FIXME: could `node` be null before this?
+        # persist = true
+        # while persist
+        #     push!(suffixes, node)
+        #     display(node.value)
+        #     println(node.count)
+        #     if isdefined(node, :link)
+        #         node = node.link
+        #     else
+        #         push!(suffixes, node)
+        #         persist = false
+        #     end
+        # end
+
         persist = true
         while persist
             push!(suffixes, node)
+            display(node.value)
+            println(node.count)
             if isdefined(node, :link)
                 node = node.link
             else
+                # push!(suffixes, node)
                 persist = false
             end
         end
 
+
+
+
+
+        println("suffixes length: ", length(suffixes))
         # follow node links to get a list of
         # all occurences of a certain item
         for suffix in suffixes
+
             frequency = suffix.count
             path = []
             parent = suffix.parent
 
             while isdefined(parent, :parent) && parent.value != ROOT_STRING
-                # println(parent.value)
+                # display(parent.value)        # NOTE: same as python here
                 push!(path, parent.value)
                 parent = parent.parent
             end
-
-            for i = 1:frequency
+            println(suffix.value, " frequency: ", frequency)
+            for i = 0:(frequency-1)
+                # println(i)
                 push!(conditional_tree_input, path)
             end
         end
-
+        display(conditional_tree_input)
         # Now we have the input for a subtree,
         # so construct it and grab the patterns.
         subtree = FPTree(tree,
@@ -309,12 +348,14 @@ function mine_sub_trees(tree, threshold)
                          item,
                          tree.frequent[item])
 
+        # display(subtree.frequent)
         subtree_patterns = mine_patterns(subtree, threshold)
-
-        display(subtree_patterns)
+        # println(length(subtree_patterns))
+        # display(subtree_patterns)
 
         # Insert subtree patterns into main patterns dictionary.
         for pattern in keys(subtree_patterns)
+            # display(patterns)
             patterns[pattern] = get(patterns, pattern, 0) + subtree_patterns[pattern]
         end
 
@@ -332,13 +373,13 @@ end
 
 
 # testing FP growth in Julia
-using Gallium
+# using Gallium
 
 
 n1 = FPNode()
 n2 = FPNode("a", 3, n1)
-@code_warntype FPNode()
-@code_warntype FPNode("a", 3, n1)
+# @code_warntype FPNode()
+# @code_warntype FPNode("a", 3, n1)
 
 
 
