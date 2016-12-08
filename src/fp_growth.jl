@@ -20,7 +20,7 @@ type FPNode
 
     function FPNode(value, count)
         # This method is for root node initialization
-        x = new(value, count)                  # FIXME: cheap shortcut
+        x = new(value, count)
         x.children = Array{FPNode,1}(0)
         x.parent = x
         return x
@@ -29,15 +29,15 @@ end
 
 
 type FPTree
-    frequent
-    headers # FIXME: This breaks when specifying type as Dict{String,FPNode}
-    root
+    frequent::Dict{String,Int}
+    headers::Dict{String,FPNode}
+    root::FPNode
 
     # This methods is dispatched for the initial
     # creation of the FP tree.
     function FPTree(transactions, threshold)
         frequent = find_frequent_items(transactions, threshold)
-        headers = build_header_table(frequent)
+        headers = Dict{String, FPNode}()#build_header_table(frequent)
         res = new(frequent, headers)
         res.root = build_fptree!(res,
                                  transactions,
@@ -50,7 +50,7 @@ type FPTree
 
     function FPTree(tree, transactions, threshold, root_value, root_count)
         frequent = find_frequent_items(transactions, threshold)
-        headers = build_header_table(frequent)
+        headers = Dict{String, FPNode}() #build_header_table(frequent)
         root = build_fptree!(tree,
                              transactions,
                              root_value,
@@ -109,7 +109,7 @@ end
 
 # Create Dict of items with occurrences above threshold.
 function find_frequent_items(transactions, threshold)
-    items = OrderedDict{String,Int}()
+    items = Dict{String,Int}()
 
     for transaction in transactions
         for item in transaction
@@ -126,13 +126,13 @@ function find_frequent_items(transactions, threshold)
 end
 
 
-function build_header_table(frequent)
-    headers = OrderedDict()
-    for k in keys(frequent)
-        headers[k] = nothing
-    end
-    headers
-end
+# function build_header_table(frequent)
+#     headers = Dict()
+#     for k in keys(frequent)
+#         headers[k] = nothing
+#     end
+#     headers
+# end
 
 
 # This method is to be dispatched on creation of the actual
@@ -170,7 +170,9 @@ function insert_tree!(tree::FPTree, items, node, headers)
 
         # Now we link the newly created node
         # to the header structure.
-        if headers[first_item] == nothing
+
+        # if headers[first_item] == nothing
+        if !haskey(headers, first_item)
             headers[first_item] = child
         else
             current = headers[first_item]
@@ -220,7 +222,7 @@ function zip_patterns(tree, patterns)
         suffix = tree.root.value
 
         if suffix ≠ ROOT_STRING
-            new_patterns = OrderedDict{Array{String,1},Int}()
+            new_patterns = Dict{Array{String,1},Int}()
 
             for k in keys(patterns)
                 xpattern = vcat(k, suffix)
@@ -236,7 +238,7 @@ end
 
 # Generate a list of patterns with support counts
 function generate_pattern_list(tree)
-    patterns = OrderedDict{Array{String,1},Int}()
+    patterns = Dict{Array{String,1},Int}()
     items = collect(keys(tree.frequent))
 
     # If we are in a conditional tree,
@@ -259,7 +261,7 @@ end
 
 
 function mine_sub_trees(tree, threshold)
-    patterns = OrderedDict{Array{String,1},Int}()
+    patterns = Dict{Array{String,1},Int}()
     xkeys = collect(keys(tree.frequent))
     mining_order = sort(xkeys, by = x -> tree.frequent[x])
 
@@ -342,7 +344,7 @@ transacts = [["a", "b", "c"],
              ["a", "b", "c", "d"],
              ["c", "d", "e"]]
 
-res = find_frequent_patterns(transacts, 0.001)
+res = find_frequent_patterns(transacts, 1)
 
 
 transacts2 = [["a", "b", "c"],
@@ -358,7 +360,7 @@ transacts2 = [["a", "b", "c"],
              ["g", "a", "b", "c", "d"],
              ["b", "f", "c", "d", "e"]]
 
-@time res2 = find_frequent_patterns(transacts2, 0.001)
+@time res2 = find_frequent_patterns(transacts2, 1)
 
 
 function make_transactions(X::Array{Any,2})
