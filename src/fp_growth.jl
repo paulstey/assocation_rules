@@ -1,6 +1,7 @@
 # translate pyfpgrowth
 using Combinatorics
 using DataStructures
+using DataFrames
 
 const ROOT_STRING = "{}"                      # FIXME: hacky and fragile
 
@@ -264,8 +265,8 @@ function mine_sub_trees(tree, threshold)
 
     # Get items in tree in reverse order of occurrences.
     for item in mining_order
-        suffixes = []
-        conditional_tree_input = []          # NOTE:replace this with type-specific array
+        suffixes = Array{FPNode,1}(0)
+        conditional_tree_input = Array{Array{String,1},1}(0)          # NOTE:replace this with type-specific array
         node = tree.headers[item]
 
         persist = true
@@ -283,7 +284,7 @@ function mine_sub_trees(tree, threshold)
         # all occurences of a certain item
         for suffix in suffixes
             frequency = suffix.count
-            path = []
+            path = Array{String,1}(0)
             parent = suffix.parent
             j = 1
             while parent ≠ parent.parent
@@ -324,11 +325,9 @@ end
 
 
 # testing FP growth in Julia
-using Gallium
-#
-# n1 = FPNode()
+n1 = FPNode("b", 2)
 # n2 = FPNode("a", 3, n1)
-# @code_warntype FPNode()
+@code_warntype FPNode("c", 3)
 # @code_warntype FPNode("a", 3, n1)
 
 
@@ -358,4 +357,39 @@ transacts2 = [["a", "b", "c"],
              ["d", "c", "e", "f", "g"],
              ["g", "a", "b", "c", "d"],
              ["b", "f", "c", "d", "e"]]
+
 @time res2 = find_frequent_patterns(transacts2, 0.001)
+
+
+function make_transactions(X::Array{Any,2})
+    n, p = size(X)
+    X = map(string, X)
+
+    out = Array{Array{String, 1}, 1}(n)
+    for i = 1:n
+        out[i] = convert(Array{String, 1}, X[i, :])
+    end
+    return out
+end
+
+
+
+function make_transactions(X::DataFrame)
+    n, p = size(X)
+    Xstr = Array{String}(n, p)
+    for j = 1:p
+        Xstr[:, j] = map(string, X[:, j])
+    end
+
+    out = Array{Array{String, 1}, 1}(n)
+    for i = 1:n
+        out[i] = convert(Array{String, 1}, Xstr[i, :])
+    end
+    return out
+end
+
+adult = readtable("./data/adult.csv")
+
+T = make_transactions(adult)
+
+@time find_frequent_patterns(T, 1000)
