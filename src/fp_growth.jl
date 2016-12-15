@@ -37,7 +37,7 @@ type FPTree
     # creation of the FP tree.
     function FPTree(transactions, threshold)
         frequent = find_frequent_items(transactions, threshold)
-        headers = Dict{String, FPNode}()#build_header_table(frequent)
+        headers = Dict{String,FPNode}() #build_header_table(frequent)
         res = new(frequent, headers)
         res.root = build_fptree!(res,
                                  transactions,
@@ -50,7 +50,7 @@ type FPTree
 
     function FPTree(tree, transactions, threshold, root_value, root_count)
         frequent = find_frequent_items(transactions, threshold)
-        headers = Dict{String, FPNode}() #build_header_table(frequent)
+        headers = Dict{String,FPNode}() #build_header_table(frequent)
         root = build_fptree!(tree,
                              transactions,
                              root_value,
@@ -64,11 +64,11 @@ type FPTree
 end
 
 
-function has_child(pnode::FPNode, value)
-    res = false
-    for child in pnode.children
+function child_position(pnode::FPNode, value)
+    res = 0                 # HACK: must be a better solution
+    for i, child in enumerate(pnode.children)
         if child.value == value
-            res = true
+            res = i
             break
         end
     end
@@ -76,28 +76,9 @@ function has_child(pnode::FPNode, value)
 end
 
 
-# NOTE: This function needs re-thinking since
-# it can return either a child node or `nothing`.
-# IDEA: only call get_child() when we have already
-# confirmed its existence with has_child().
-function get_child(pnode::FPNode, value)
-    # res = nothing
-    for child in pnode.children
-        if child.value == value
-            return child
-        end
-    end
-end
 
-# FIXME: This function might render the above
-# get_child() unnecessary.
-function increment_child!(pnode::FPNode, value)
-    for child in pnode.children
-        if child.value == value
-            child.count += 1
-            break
-        end
-    end
+function increment_child!(pnode::FPNode, idx)
+    pnode.children[idx].count += 1
 end
 
 
@@ -161,17 +142,19 @@ function insert_tree!(tree::FPTree, items, node, headers)
     # recursively grow FP tree
     first_item = first(items)
 
-    if has_child(node, first_item)
-        increment_child!(node, first_item)           # increment existing child counter
-        child = get_child(node, first_item)
-    else
+    # child_idx will be 0 if not found, otherwise
+    # it is the index of their position.
+    child_idx = child_position(node, first_item)
+
+    if child_idx ≠ 0
+        increment_child!(node, child_idx)            # increment existing child counter
+        child = node.children[child_idx]
+    elseif child_idx == 0
         add_child!(node, first_item)                 # add new child
-        child = last(node.children)             # child we just inserted
+        child = last(node.children)                  # child we just inserted
 
         # Now we link the newly created node
         # to the header structure.
-
-        # if headers[first_item] == nothing
         if !haskey(headers, first_item)
             headers[first_item] = child
         else
@@ -268,7 +251,7 @@ function mine_sub_trees(tree, threshold)
     # Get items in tree in reverse order of occurrences.
     for item in mining_order
         suffixes = Array{FPNode,1}(0)
-        conditional_tree_input = Array{Array{String,1},1}(0)          # NOTE:replace this with type-specific array
+        conditional_tree_input = Array{Array{String,1},1}(0)
         node = tree.headers[item]
 
         persist = true
@@ -288,11 +271,9 @@ function mine_sub_trees(tree, threshold)
             frequency = suffix.count
             path = Array{String,1}(0)
             parent = suffix.parent
-            j = 1
             while parent ≠ parent.parent
                 push!(path, parent.value)
                 parent = parent.parent
-                j += 1
             end
             for i = 1:frequency
                 push!(conditional_tree_input, path)
@@ -326,43 +307,6 @@ function find_frequent_patterns(transactions, support_threshold)
 end
 
 
-# testing FP growth in Julia
-n1 = FPNode("b", 2)
-# n2 = FPNode("a", 3, n1)
-@code_warntype FPNode("c", 3)
-# @code_warntype FPNode("a", 3, n1)
-
-
-
-transacts = [["a", "b", "c"],
-             ["a", "c", "d", "e"],
-             ["b", "e"],
-             ["b", "a", "c"],
-             ["c", "d"],
-             ["a", "b"],
-             ["d", "c", "e"],
-             ["a", "b", "c", "d"],
-             ["c", "d", "e"]]
-
-res = find_frequent_patterns(transacts, 1)
-
-
-transacts2 = [["a", "b", "c"],
-             ["a", "c", "d", "e"],
-             ["b", "e"],
-             ["b", "a", "c"],
-             ["c", "d"],
-             ["a", "b"],
-             ["d", "c", "e"],
-             ["a", "b", "c", "d"],
-             ["c", "d", "e"],
-             ["d", "c", "e", "f", "g"],
-             ["g", "a", "b", "c", "d"],
-             ["b", "f", "c", "d", "e"]]
-
-@time res2 = find_frequent_patterns(transacts2, 1)
-
-
 function make_transactions(X::Array{Any,2})
     n, p = size(X)
     X = map(string, X)
@@ -389,9 +333,3 @@ function make_transactions(X::DataFrame)
     end
     return out
 end
-
-adult = readtable("./data/adult.csv")
-
-T = make_transactions(adult)
-
-@time find_frequent_patterns(T, 1000)
