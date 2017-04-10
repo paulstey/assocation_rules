@@ -12,7 +12,7 @@ Note that a portion of our implementation of the _Apriori_ algorithm was adapted
 
 
 ## Initial Setup
-```{Julia}
+```Julia
 Pkg.clone("https://github.com/bcbi/association_rules_jl.git")
 ```
 
@@ -21,7 +21,7 @@ Several examples below illustrate the use and features of the `apiori()` functio
 
 ### Ex. 1 _Apriori_ Algorithm:
 Here we are generating association rules using the `apriori()` function.
-```{Julia}
+```Julia
 using AssociationRules
 using StatsBase                        # for sample() function
 
@@ -35,7 +35,7 @@ rules = apriori(transactions, 0.1, 0.4)
 
 
 Note that by default our `apriori()` function generates multi-item consequents. However, it can be made to mimic the `apriori()` function in R's _arules_ package and generate only single-item consequents.
-```{Julia}
+```Julia
 groceries = ["milk", "bread", "eggs", "apples", "oranges", "beer"]
 transactions = [sample(groceries, 4, replace = false) for x in 1:1000]
 
@@ -45,7 +45,7 @@ rules = apriori(transactions, 0.1, 0.4, false)
 
 
 We can also use the `frequent()` function to generate the frequent item sets based on some minimum support threshold. Note that this function is called internally by the `apriori()` function when generating association rules.
-```{Julia}
+```Julia
 groceries = ["milk", "bread", "eggs", "apples", "oranges", "beer"]
 transactions = [sample(groceries, 4, replace = false) for x in 1:1000]
 
@@ -57,7 +57,7 @@ fk = frequent(transactions, 0.1)
 
 ### Ex. 2 _Apriori_ Algorithm (with tabular data)
 The more common scenario will be the one in which we start with tabular data from a two-dimensional `Array` or a `DataFrame` object.
-```{Julia}
+```Julia
 adult = dataset("adult")
 
 # convert tabular data
@@ -70,7 +70,7 @@ rules = apriori(transactions, 0.1, 0.4)
 
 ### Ex. 3 SPADE Algorithm
 The SPADE algorithm takes sequential transaction or event data and generates frequent sequential patterns. Once again, the standard scenario is the one in which we start with tabular data from a two-dimensional `Array` or a `DataFrame` object. This is then converted to and array of `Sequence` objects, which is the input type that our `spade()` function requires.
-```{Julia}
+```Julia
 zaki_data = dataset("zaki_data")
 
 # Convert tabular data to sequences. Item is in
@@ -85,7 +85,7 @@ fseq = spade(seqs, 0.1, 6)
 
 ### Ex. 4 Sequential Rules
 The SPADE algorithm is used to generate frequent sequential patterns. Using these patterns we can derive sequential rules of the type _{X} => {Y}_, where _{X}_ and _{Y}_ are sequential patterns and _{X}_ preceded _{Y}_.
-```{Julia}
+```Julia
 zaki_data = dataset("zaki_data")
 
 seqs = make_sequences(zaki_data, item_col = 1, sid_col = 2, eid_col = 3)                   
