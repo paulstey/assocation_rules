@@ -7,7 +7,7 @@ import Base.isless
 import Base.==
 
 type Node
-    item_ids::Array{Int,1} 
+    item_ids::Array{Int16,1} 
     transacts::BitArray 
 end
 
@@ -27,7 +27,6 @@ function ==(x::Array{Node,1}, y::Array{Node,1})
     end
     res 
 end
-
 
 
 
@@ -56,19 +55,30 @@ function sort(x::Array{Array{Int,1},1})
     x[perm]
 end
 
-
 @code_warntype sortperm([[3, 13, 21], [3, 12, 14]])
 
 
+function prefix(nd::Node, k::Int)
+    res = view(nd.item_ids, 1:k-2)
+    res 
+end
 
 
-groceries = ["milk", "bread", "eggs", "apples", "oranges", "beer", "steak", "chicken"]
-transactions = [sample(groceries, 4, replace = false) for x in 1:1_000_000]
+groceries = ["asparagus", "broccoli", "carrots", "cauliflower", "celery", 
+             "corn", "cucumbers", "lettuce", "mushrooms", "onions", 
+             "peppers", "potatos", "spinach", "zucchini", "tomatoes",
+             "apples", "avocados", "bananas", "berries", "cherries",
+             "grapefruit", "grapes", "kiwis", "lemons", "melon",
+             "oranges", "peaches", "nectarines", "pears", "plums",
+             "butter", "milk", "sour cream", "whipped cream", "yogurt",
+             "bacon", "beef", "chicken", "ground beef", "turkey",
+             ]
+
+transactions = [sample(groceries, 12, replace = false) for x in 1:1_000_000];
 
 function get_unique_items{M}(T::Array{Array{M, 1}, 1})
     dict = Dict{M, Int}()
 
-    # loop over transactions, store each item in I
     for t in T
         for i in t
             dict[i] = 1
@@ -135,7 +145,7 @@ occ2 = occurrence(transactions);
 function bitwise_and!(x::BitArray, y::BitArray)
     # NOTE: This function's number of allocations is constant with respect to the size 
     # of inputs. But it's slower than `x & y`, which doesn't modify in place and uses more mem.
-    @threads for i = 1:length(x)
+    for i = 1:length(x)
         @inbounds x[i] &= y[i]
     end
 end
@@ -146,7 +156,7 @@ n = 100_000_000
 
 
 function inplace_bitwise_and!(res::BitArray, x::BitArray, y::BitArray)
-    @threads for i = 1:length(res)
+    for i = 1:length(res)
         res[i] = x[i] & y[i]
     end
 end
@@ -170,16 +180,23 @@ function transactions_to_nodes(T::Array{Array{String,1},1})
     end 
     nodes = Array{Node,1}(p)
     for j = 1:p
-        @inbounds nodes[j] = Node([j], occur[:, j])
+        @inbounds nodes[j] = Node([Int16(j)], occur[:, j])
     end 
     
-    # Get size of largest transaction 
-    row_cnts = zeros(Int, n) 
-    @simd for i = 1:n 
-        @inbounds row_cnts[i] = sum(occur[i, :])
+
+    return nodes
+end
+
+
+# Get size of largest transaction 
+function max_transaction(T::Array{Array{String,1},1})
+    res = 0
+    n = length(T)
+    for i = 1:n
+        len = length(T[i])
+        res = (len > res) ? len : res 
     end
-    max_items = maximum(row_cnts)
-    return (nodes, max_items) 
+    res 
 end
 
 
@@ -196,8 +213,8 @@ t = [["a", "b"],
 
 @time transactions_to_nodes(t)
 
-n = 1_000_000
-transactions = [sample(groceries, 6, replace = false) for x in 1:n]
+n = 100_000
+transactions = [sample(groceries, 20, replace = false) for x in 1:n];
 @time w1 = transactions_to_nodes(transactions);
 
 
@@ -209,32 +226,44 @@ function merge_nodes(node1, node2, k, n_obs)
     elseif k > 2
         ids[k] = node2.item_ids[k-1]
     end
-    transacts = falses(n_obs) 
-    inplace_bitwise_and!(transacts, node1.transacts, node2.transacts)
+    # transacts = falses(n_obs) 
+    transacts = node1.transacts & node2.transacts
     nd = Node(ids, transacts)
     return nd 
 end
 
 
-function gen_next_layer(prev::Array{Node,1}, minsupp = 0)
-    k = length(prev[1].item_ids) + 1
-    n = length(prev)
+function gen_next_layer(prev::Array{Node,1}, minsupp = 1)
+    if length(prev) == 0
+        n = 0
+    else
+        k = length(prev[1].item_ids) + 1
+        n = length(prev)
+        n_obs = length(prev[1].transacts)
+    end
     nodes = Array{Node,1}(0)             # next layer of nodes
-    n_obs = length(prev[1].transacts)
+    
 
     for i = 1:(n-1)
         for j = (i+1):n 
-            nd = merge_nodes(prev[i], prev[j], k, n_obs)
-            if sum(nd.transacts) ≥ minsupp
-                push!(nodes, nd)
-            end 
+            if k == 2 || prefix(prev[i], k) == prefix(prev[j], k)
+                nd = merge_nodes(prev[i], prev[j], k, n_obs)
+                if sum(nd.transacts) ≥ minsupp
+                    push!(nodes, nd)
+                end 
+            end
         end 
     end
     nodes 
 end
 
+
 a1 = transactions_to_nodes(t)
 @code_warntype gen_next_layer(a1)
+
+n = 100_000
+transactions = [sample(groceries, 12, replace = false) for x in 1:n]
+@time w1 = transactions_to_nodes(transactions);
 @time gen_next_layer(w1);
 a2 = gen_next_layer(a1)
 a3 = gen_next_layer(a2)
@@ -242,21 +271,26 @@ a4 = gen_next_layer(a3)
 
 
 function frequent(T::Array{Array{String,1},1}, minsupp = 0)
-    nodes, max_items = transactions_to_nodes(T)
+    nodes = transactions_to_nodes(T)
+    max_items = max_transaction(T)
+
     F = Array{Array{Node,1},1}(max_items)
-    F[1] = deepcopy(nodes)
-    for k = 2:max_items
+    F[1] = nodes
+    k = 2
+
+    while k <= max_items 
         # println(k)
         F[k] = gen_next_layer(F[k-1], minsupp)
+        k += 1
     end
     F
 end
 
-n = 10
-t1 = [sample(groceries, 6, replace = false) for x in 1:n]
+n = 100_000
+t = [sample(groceries, 20, replace = false) for _ in 1:n];
 
 @code_warntype frequent(t, 1)
-@time f = frequent(t, 1);
+@time f = frequent(t, round(Int, n*0.2));
 
 
 
