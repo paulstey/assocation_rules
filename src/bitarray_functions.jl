@@ -72,7 +72,12 @@ groceries = ["asparagus", "broccoli", "carrots", "cauliflower", "celery",
              "oranges", "peaches", "nectarines", "pears", "plums",
              "butter", "milk", "sour cream", "whipped cream", "yogurt",
              "bacon", "beef", "chicken", "ground beef", "turkey",
-             ]
+             "crab", "lobster", "oysters", "salmon", "shrimp", 
+             "tilapia", "tuna", "flour", "sugar", "yeast", 
+             "cookies", "crackers", "nuts", "oatmeal", "popcorn",
+             "pretzels", "cosmetics", "floss", "mouthwash", "toothpaste",
+             "lime", "almonds", "cashews", "ketchup", "mustard"]
+
 
 transactions = [sample(groceries, 12, replace = false) for x in 1:1_000_000];
 
@@ -218,7 +223,7 @@ transactions = [sample(groceries, 20, replace = false) for x in 1:n];
 @time w1 = transactions_to_nodes(transactions);
 
 
-function merge_nodes(node1, node2, k, n_obs)
+function merge_nodes(node1, node2, k)
     ids = Array{Int,1}(k)
     ids[1:k-1] = deepcopy(node1.item_ids[1:(k-1)])
     if k == 2
@@ -226,7 +231,6 @@ function merge_nodes(node1, node2, k, n_obs)
     elseif k > 2
         ids[k] = node2.item_ids[k-1]
     end
-    # transacts = falses(n_obs) 
     transacts = node1.transacts & node2.transacts
     nd = Node(ids, transacts)
     return nd 
@@ -239,7 +243,6 @@ function gen_next_layer(prev::Array{Node,1}, minsupp = 1)
     else
         k = length(prev[1].item_ids) + 1
         n = length(prev)
-        n_obs = length(prev[1].transacts)
     end
     nodes = Array{Node,1}(0)             # next layer of nodes
     
@@ -287,7 +290,7 @@ function frequent(T::Array{Array{String,1},1}, minsupp = 0)
 end
 
 n = 100_000
-t = [sample(groceries, 20, replace = false) for _ in 1:n];
+t = [sample(groceries, 50, replace = false) for _ in 1:n];
 
 @code_warntype frequent(t, 1)
 @time f = frequent(t, round(Int, n*0.2));
