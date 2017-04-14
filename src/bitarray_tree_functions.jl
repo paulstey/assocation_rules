@@ -82,59 +82,6 @@ end
 growtree!(n2, 1, 3, 3)
 
 
-function occurrence(T::Array{Array{String, 1}, 1})
-    n = length(T)
-    uniq_items = get_unique_items(T)
-    sort!(uniq_items)
-    p = length(uniq_items)
-    res = BitArray(n, p)
-
-    for j = 1:p 
-        for i = 1:n
-            res[i, j] = uniq_items[j] ∈ T[i]
-        end 
-    end 
-    res 
-end
-
-
-function prefix_tree(items, k)
-    root = Node(Int16(1), Int16[-1], BitArray(0))
-    n_items = length(items)
-
-    for j = 1:n_items
-        nd = Node(Int16(j), Int16[j], occ[:, j], root)
-        push!(root, nd)
-    end
-    n_kids = length(root.children)
-    for j = 1:n_kids
-        growtree!(root.children[j], minsupp, 2, 5)
-    end
-    root 
-end
-
-
-
-
-
-
-
-
-groceries = ["asparagus", "broccoli", "carrots", "cauliflower", "celery", 
-             "corn", "cucumbers", "lettuce", "mushrooms", "onions", 
-             "peppers", "potatos", "spinach", "zucchini", "tomatoes",
-             "apples", "avocados", "bananas", "berries", "cherries",
-             "grapefruit", "grapes", "kiwis", "lemons", "melon",
-             "oranges", "peaches", "nectarines", "pears", "plums",
-             "butter", "milk", "sour cream", "whipped cream", "yogurt",
-             "bacon", "beef", "chicken", "ground beef", "turkey",
-             "crab", "lobster", "oysters", "salmon", "shrimp", 
-             "tilapia", "tuna", "flour", "sugar", "yeast", 
-             "cookies", "crackers", "nuts", "oatmeal", "popcorn",
-             "pretzels", "cosmetics", "floss", "mouthwash", "toothpaste"]
-
-transactions = [sample(groceries, 12, replace = false) for x in 1:1_000_000];
-
 
 function get_unique_items{M}(T::Array{Array{M, 1}, 1})
     dict = Dict{M, Int}()
@@ -164,6 +111,40 @@ function occurrence(T::Array{Array{String, 1}, 1})
 end
 
 
+
+function occurrence(T::Array{Array{String, 1}, 1}, uniq_items::Array{String,1})
+    n = length(T)
+    p = length(uniq_items)
+    res = BitArray(n, p)
+    for j = 1:p 
+        for i = 1:n
+            res[i, j] = uniq_items[j] ∈ T[i]
+        end 
+    end 
+    res 
+end
+
+
+function buildtree(T::Array{Array{String,1},1}, minsupp, maxdepth)
+    uniq_items = get_unique_items(T)
+    sort!(uniq_items)
+
+    occ = occurrence(T, uniq_items)
+    root = Node(Int16(1), Int16[-1], BitArray(0))
+    n_items = length(uniq_items)
+
+    for j = 1:n_items
+        nd = Node(Int16(j), Int16[j], occ[:, j], root)
+        push!(root.children, nd)
+    end
+    n_kids = length(root.children)
+    for j = 1:n_kids
+        growtree!(root.children[j], minsupp, 2, maxdepth)
+    end
+    root 
+end
+
+
 t = [["a", "b"], 
      ["b", "c", "d"], 
      ["a", "c"],
@@ -172,6 +153,46 @@ t = [["a", "b"],
      ["a", "e"], 
      ["a", "b", "c"],
      ["c", "b", "e"]]
+
+xtree1 = buildtree(t, 1)
+
+
+
+
+
+
+groceries = ["asparagus", "broccoli", "carrots", "cauliflower", "celery", 
+             "corn", "cucumbers", "lettuce", "mushrooms", "onions", 
+             "peppers", "potatos", "spinach", "zucchini", "tomatoes",
+             "apples", "avocados", "bananas", "berries", "cherries",
+             "grapefruit", "grapes", "kiwis", "lemons", "melon",
+             "oranges", "peaches", "nectarines", "pears", "plums",
+             "butter", "milk", "sour cream", "whipped cream", "yogurt",
+             "bacon", "beef", "chicken", "ground beef", "turkey",
+             "crab", "lobster", "oysters", "salmon", "shrimp", 
+             "tilapia", "tuna", "flour", "sugar", "yeast", 
+             "cookies", "crackers", "nuts", "oatmeal", "popcorn",
+             "pretzels", "cosmetics", "floss", "mouthwash", "toothpaste",
+             "lime", "almonds", "cashews", "ketchup", "mustard"]
+
+transactions = [sample(groceries, 12, replace = false) for x in 1:1_000_000];
+
+
+n = 100_000
+t = [sample(groceries, 50, replace = false) for _ in 1:n];
+
+# @code_warntype buildtree(t, 1)
+@time f = buildtree(t, round(Int, n*0.2));
+
+
+
+
+
+
+
+
+
+
 
 
 @code_warntype get_unique_items(t)
