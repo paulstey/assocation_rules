@@ -54,12 +54,18 @@ push!(n1.children, n8)
 push!(n1.children, n9)
 push!(n1.children, n10)
 
+function has_children(nd::Node)
+    res = length(nd.children) > 0
+    res 
+end
+
 
 function younger_siblings(nd::Node)
     n_sibs = length(nd.mother.children)
     return view(nd.mother.children, (nd.id + 1):n_sibs)
 end
 
+@code_warntype younger_siblings(n1.children[1])
 younger_siblings(n1.children[1])
 
 
@@ -78,7 +84,7 @@ function growtree!(nd::Node, minsupp, k, maxdepth)
     end
     # Recurse on newly created children
     maxdepth -= 1
-    if maxdepth > 0
+    if maxdepth > 1
         for child in nd.children 
             growtree!(child, minsupp, k+1, maxdepth)
         end
@@ -101,6 +107,16 @@ function get_unique_items{M}(T::Array{Array{M, 1}, 1})
     return collect(keys(dict))
 end
 
+t = [["a", "b"], 
+     ["b", "c", "d"], 
+     ["a", "c"],
+     ["e", "b"], 
+     ["a", "c", "d"], 
+     ["a", "e"], 
+     ["a", "b", "c"],
+     ["c", "b", "e"]]
+
+# @code_warntype get_unique_items(t);
 @time get_unique_items(t);
 
 
@@ -117,7 +133,8 @@ function occurrence(T::Array{Array{String, 1}, 1}, uniq_items::Array{String,1})
 end
 
 unq = get_unique_items(t)
-@code_warntype occurrence(t, unq)
+# @code_warntype occurrence(t, unq)
+@time occurrence(t, unq)
 
 
 function buildtree(T::Array{Array{String,1},1}, minsupp, maxdepth)
@@ -150,37 +167,25 @@ t = [["a", "b"],
      ["a", "c", "d"], 
      ["a", "e"], 
      ["a", "b", "c"],
-     ["c", "b", "e"]]
+     ["c", "b", "e", "f"]]
 
 @code_warntype buildtree(t, 1, 3)
 xtree1 = buildtree(t, 1, 3)
 
 
+function prettyprint(node::Node, k::Int = 0)
+    if has_children(node)
+        for nd in node.children 
+            print("k = $(k + 1): ")
+            println(nd.item_ids)
+        end
+        for nd in node.children
+            prettyprint(nd, k+1)
+        end
+    end
+end
 
-
-
-groceries = ["asparagus", "broccoli", "carrots", "cauliflower", "celery", 
-             "corn", "cucumbers", "lettuce", "mushrooms", "onions", 
-             "peppers", "potatos", "spinach", "zucchini", "tomatoes",
-             "apples", "avocados", "bananas", "berries", "cherries",
-             "grapefruit", "grapes", "kiwis", "lemons", "melon",
-             "oranges", "peaches", "nectarines", "pears", "plums",
-             "butter", "milk", "sour cream", "whipped cream", "yogurt",
-             "bacon", "beef", "chicken", "ground beef", "turkey",
-             "crab", "lobster", "oysters", "salmon", "shrimp", 
-             "tilapia", "tuna", "flour", "sugar", "yeast", 
-             "cookies", "crackers", "nuts", "oatmeal", "popcorn",
-             "pretzels", "cosmetics", "floss", "mouthwash", "toothpaste",
-             "lime", "almonds", "cashews", "ketchup", "mustard",
-             "barley, quinoa", "couscous", "rice cakes", "pita bread",
-             "agave", "soy milk", "almond milk", "apple butter", "maple syrup",
-             "coffee filters", "granola", "bleach", "toaster pasteries", "glass cleaner",
-             "paper towels", "paper plates", "napkins", "sour cream", "pepperonis",
-             "buns", "rolls", "half and half", "steak sauce", "relish", 
-             "gravy", "lip balm", "goat cheese", "sunblock", "hand soap",
-             "muffins", "floss", "spaghetti", "bbq sauce", "vinegar"]
-
-# transactions = [sample(groceries, 12, replace = false) for x in 1:10];
+prettyprint(xtree1)
 
 
 n = 100_000
@@ -191,16 +196,10 @@ t = [sample(groceries, m, replace = false) for _ in 1:n];
 @time f = buildtree(t, round(Int, n*0.1), m);
 
 
-"""
-    randstring(n, len)
 
-This function generates `n` random strings of length `len`. The strings will 
-be concatenated characters uniformally drawn from all alphabetic characters 
-(uppers and lowercase), as well as the numbers 0 to 9.
-"""
 function randstring(n::Int, len::Int = 16)
     vals = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", 
-               "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
+            "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
     upper = map(uppercase, vals)
     append!(vals, upper)
     append!(vals, map(string, 0:9))
@@ -227,17 +226,41 @@ t = [sample(itemlist, m, replace = false) for _ in 1:n];
 
 
 
+# function get_cousins(node::Node)
+#     cousins = Array{Node,1}(0)
+#     if isdefined(node, :mother) && isdefined(node.mother, :mother) 
+#         for aunt in younger_siblings(node.mother)
+#             for nd in aunt.children
+#                 push!(cousins, nd)
+#             end
+#         end
+#     end
+#     cousins
+# end
+
+# get_cousins(xtree1.children[1])
 
 
+# function prettyprint2(node::Node, k::Int)
+#     if has_children(node)
+#         for nd in node.children 
+#             print("k = $(k + 1): ")
+#             println(nd.item_ids)
+#         end
+#         for nd in node.children
+#             if (k + 1) ≥ 1 && has_children(nd)
+#                 for nd in vcat(nd.children, get_cousins(nd.children[1])) 
+#                     print("k = $(k + 2): ")
+#                     println(nd.item_ids)
+#                 end
+                
+#             end
+#         end
+#         prettyprint2(node.children[1], k + 1)
+#     end
+# end
 
-
-
-
-
-
-@code_warntype get_unique_items(t)
-
-occ1 = occurrence(t)
+# prettyprint2(xtree1, 0)
 
 
 
