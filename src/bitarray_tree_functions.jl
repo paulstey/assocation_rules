@@ -29,7 +29,6 @@ type Node
 end
 
 # @code_warntype Node(Int16(1), Int16[1], trues(3))
-
 n1 = Node(Int16(1), Int16[1], trues(3))
 
 # @code_warntype Node(Int16(1), Int16[1, 2], trues(3), n1)
@@ -59,14 +58,21 @@ function has_children(nd::Node)
     res 
 end
 
+# @code_warntype has_children(n1)
+
 
 function younger_siblings(nd::Node)
     n_sibs = length(nd.mother.children)
     return view(nd.mother.children, (nd.id + 1):n_sibs)
 end
 
-@code_warntype younger_siblings(n1.children[1])
+# @code_warntype younger_siblings(n1.children[1])
 younger_siblings(n1.children[1])
+
+
+function update_support_cnt!(supp_dict::Dict, nd::Node)
+    supp_dict[nd.item_ids] = nd.supp 
+end
 
 
 function growtree!(nd::Node, minsupp, k, maxdepth)
@@ -75,7 +81,7 @@ function growtree!(nd::Node, minsupp, k, maxdepth)
         transacts = nd.transactions & sibs[j].transactions
         if sum(transacts) ≥ minsupp
             items = zeros(Int16, k)
-            items[1:k-1] = deepcopy(nd.item_ids[1:k-1])
+            items[1:k-1] = nd.item_ids[1:k-1]
             items[end] = sibs[j].item_ids[end]
             
             child = Node(Int16(j), items, transacts, nd)
@@ -116,24 +122,27 @@ t = [["a", "b"],
      ["a", "b", "c"],
      ["c", "b", "e"]]
 
-# @code_warntype get_unique_items(t);
+@code_warntype get_unique_items(t);
 @time get_unique_items(t);
 
 
-function occurrence(T::Array{Array{String, 1}, 1}, uniq_items::Array{String,1})
+function occurrence(T::Array{Array{String, 1}, 1}, uniq_items::Array{String, 1})
     n = length(T)
     p = length(uniq_items)
-    res = BitArray(n, p)
-    for j = 1:p 
-        for i = 1:n
-            res[i, j] = uniq_items[j] ∈ T[i]
-        end 
-    end 
+
+    itm_pos = Dict(zip(uniq_items, 1:p))
+    res = falses(n, p)
+    for i = 1:n 
+        for itm in T[i]
+            j = itm_pos[itm]
+            res[i, j] = true
+        end
+    end
     res 
 end
 
 unq = get_unique_items(t)
-# @code_warntype occurrence(t, unq)
+@code_warntype occurrence(t, unq)
 @time occurrence(t, unq)
 
 
@@ -170,7 +179,7 @@ t = [["a", "b"],
      ["c", "b", "e", "f"]]
 
 @code_warntype buildtree(t, 1, 3)
-xtree1 = buildtree(t, 1, 3)
+xtree1 = buildtree(t, 1, 4)
 
 
 function prettyprint(node::Node, k::Int = 0)
@@ -186,15 +195,6 @@ function prettyprint(node::Node, k::Int = 0)
 end
 
 prettyprint(xtree1)
-
-
-n = 100_000
-m = 10              # number of items in transactions
-t = [sample(groceries, m, replace = false) for _ in 1:n];
-
-# @code_warntype buildtree(t, 1)
-@time f = buildtree(t, round(Int, n*0.1), m);
-
 
 
 function randstring(n::Int, len::Int = 16)
@@ -216,10 +216,12 @@ itemlist = randstring(500);
 
 
 n = 1_000_000
-m = 10              # number of items in transactions
+m = 20              # number of items in transactions
 t = [sample(itemlist, m, replace = false) for _ in 1:n];
 
 # @code_warntype buildtree(t, 1)
+@time unq2 = get_unique_items(t);
+@time occ2 = occurrence(t, unq2);
 @time f = buildtree(t, round(Int, n*0.1), m);
 
 
