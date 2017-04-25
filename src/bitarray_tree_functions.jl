@@ -7,6 +7,7 @@ type Node
     transactions::BitArray{1}
     children::Array{Node,1}
     mother::Node
+    supp::Int
 
     function Node(id::Int16, item_ids::Array{Int16,1}, transactions::BitArray{1})
         nd = new()
@@ -17,13 +18,14 @@ type Node
         return nd 
     end
 
-    function Node(id::Int16, item_ids::Array{Int16,1}, transactions::BitArray{1}, mother::Node)
+    function Node(id::Int16, item_ids::Array{Int16,1}, transactions::BitArray{1}, mother::Node, supp::Int)
         nd = new()
         nd.id = id
         nd.item_ids = item_ids
         nd.transactions = transactions
         nd.children = Array{Node,1}(0)
         nd.mother = mother
+        nd.supp = supp
         return nd 
     end
 end
@@ -32,15 +34,15 @@ end
 n1 = Node(Int16(1), Int16[1], trues(3))
 
 # @code_warntype Node(Int16(1), Int16[1, 2], trues(3), n1)
-n2 = Node(Int16(1), Int16[1, 2], trues(3), n1)
-n3 = Node(Int16(1), Int16[1, 3], trues(3), n1)
-n4 = Node(Int16(1), Int16[1, 4], trues(3), n1)
-n5 = Node(Int16(1), Int16[1, 5], trues(3), n1)
-n6 = Node(Int16(1), Int16[1, 6], trues(3), n1)
-n7 = Node(Int16(1), Int16[2, 3], trues(3), n1)
-n8 = Node(Int16(1), Int16[2, 4], trues(3), n1)
-n9 = Node(Int16(1), Int16[2, 5], trues(3), n1)
-n10 = Node(Int16(1), Int16[2, 6], trues(3), n1)
+n2 = Node(Int16(1), Int16[1, 2], trues(3), n1, 1)
+n3 = Node(Int16(1), Int16[1, 3], trues(3), n1, 1)
+n4 = Node(Int16(1), Int16[1, 4], trues(3), n1, 1)
+n5 = Node(Int16(1), Int16[1, 5], trues(3), n1, 1)
+n6 = Node(Int16(1), Int16[1, 6], trues(3), n1, 1)
+n7 = Node(Int16(1), Int16[2, 3], trues(3), n1, 1)
+n8 = Node(Int16(1), Int16[2, 4], trues(3), n1, 1)
+n9 = Node(Int16(1), Int16[2, 5], trues(3), n1, 1)
+n10 = Node(Int16(1), Int16[2, 6], trues(3), n1, 1)
 
 
 push!(n1.children, n2)
@@ -74,17 +76,20 @@ function update_support_cnt!(supp_dict::Dict, nd::Node)
     supp_dict[nd.item_ids] = nd.supp 
 end
 
-
+# This function is used internally and is the workhorse of the frequent()
+# function, which generates a frequent itemset tree. The growtree!() function 
+# builds up the frequent itemset tree recursively.
 function growtree!(nd::Node, minsupp, k, maxdepth)
     sibs = younger_siblings(nd)
     for j = 1:length(sibs)
         transacts = nd.transactions & sibs[j].transactions
-        if sum(transacts) ≥ minsupp
+        supp = sum(transacts)
+        if supp ≥ minsupp
             items = zeros(Int16, k)
             items[1:k-1] = nd.item_ids[1:k-1]
             items[end] = sibs[j].item_ids[end]
             
-            child = Node(Int16(j), items, transacts, nd)
+            child = Node(Int16(j), items, transacts, nd, supp)
             push!(nd.children, child)
         end
     end
@@ -126,6 +131,8 @@ t = [["a", "b"],
 @time get_unique_items(t);
 
 
+# This function is used internally by the frequent() function to create the 
+# initial bitarrays used to represent the first "children" in the itemset tree.
 function occurrence(T::Array{Array{String, 1}, 1}, uniq_items::Array{String, 1})
     n = length(T)
     p = length(uniq_items)
@@ -146,7 +153,15 @@ unq = get_unique_items(t)
 @time occurrence(t, unq)
 
 
-function buildtree(T::Array{Array{String,1},1}, minsupp, maxdepth)
+"""
+    frequent(T, minsupp, maxdepth)
+
+This function creates a frequent itemset tree from an array of transactions. 
+The tree is built recursively using calls to the growtree!() function. The 
+`minsupp` and `maxdepth` parameters control the minimum support needed for an 
+itemset to be called "frequent", and the max depth of the tree, respectively 
+"""
+function frequent(T::Array{Array{String,1},1}, minsupp, maxdepth)
     uniq_items = get_unique_items(T)
     sort!(uniq_items)
 
@@ -154,10 +169,13 @@ function buildtree(T::Array{Array{String,1},1}, minsupp, maxdepth)
     root = Node(Int16(1), Int16[-1], BitArray(0))
     n_items = length(uniq_items)
 
-    # Creat 1-item nodes (i.e., first children)
+    # This loop creates 1-item nodes (i.e., first children)
     for j = 1:n_items
-        nd = Node(Int16(j), Int16[j], occ[:, j], root)
-        push!(root.children, nd)
+        supp = sum(occ[:, j])
+        if supp ≥ minsupp
+            nd = Node(Int16(j), Int16[j], occ[:, j], root, supp)
+            push!(root.children, nd)
+        end
     end
     n_kids = length(root.children)
 
@@ -178,8 +196,8 @@ t = [["a", "b"],
      ["a", "b", "c"],
      ["c", "b", "e", "f"]]
 
-@code_warntype buildtree(t, 1, 3)
-xtree1 = buildtree(t, 1, 4)
+@code_warntype frequent(t, 1, 3)
+xtree1 = frequent(t, 1, 4)
 
 
 function prettyprint(node::Node, k::Int = 0)
@@ -197,6 +215,7 @@ end
 prettyprint(xtree1)
 
 
+
 function randstring(n::Int, len::Int = 16)
     vals = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", 
             "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
@@ -212,18 +231,38 @@ end
 
 
 
-itemlist = randstring(500);
+itemlist = randstring(50);
 
 
-n = 1_000_000
+n = 1_000
 m = 20              # number of items in transactions
 t = [sample(itemlist, m, replace = false) for _ in 1:n];
 
-# @code_warntype buildtree(t, 1)
+# @code_warntype frequent(t, 1)
 @time unq2 = get_unique_items(t);
 @time occ2 = occurrence(t, unq2);
-@time f = buildtree(t, round(Int, n*0.1), m);
+@time f = frequent(t, round(Int, n*0.01), m);
 
+
+
+function grow_support_dict!(supp_cnt::Dict{Array{Int16,1}, Int}, node::Node) 
+    if has_children(node)
+        for nd in node.children
+            update_support_cnt!(supp_cnt, nd)
+            grow_support_dict!(supp_cnt, nd)
+        end
+    end
+end
+
+# This function generates a dictionary whose keys are the frequent 
+# itemsets (their integer represenations, actually), and whose values 
+# are the support count for the given itemset. This function is used 
+# for computing support, confidence, and lift of association rules.
+function gen_support_dict(root::Node)
+    supp_cnt = Dict{Array{Int16, 1}, Int}()
+    grow_support_dict!(supp_cnt, root)
+    return supp_cnt 
+end
 
 
 
