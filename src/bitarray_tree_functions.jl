@@ -30,6 +30,30 @@ type Node
     end
 end
 
+
+
+type Rule 
+    p::Array{Int16,1}
+    q::Int16
+    supp::Float64  
+    conf::Float64 
+    lift::Float64 
+
+    function Rule(node::Node, mask::BitArray{1}, supp_dict::Dict{Array{Int16,1}, Int}, num_transacts::Int)
+
+        rule = new()
+        rule.p = node.item_ids[mask]
+        rule.supp = node.supp/num_transacts 
+        rule.conf = rule.supp/supp_dict[node.item_ids[mask]]
+        unmask = !mask
+        q_idx = findfirst(unmask)
+        rule.q = node.item_ids[q_idx]
+        rule.lift = rule.conf/supp_dict[node.item_ids[unmask]]
+        return rule 
+    end
+end 
+
+
 # @code_warntype Node(Int16(1), Int16[1], trues(3))
 n1 = Node(Int16(1), Int16[1], trues(3))
 
@@ -81,9 +105,11 @@ end
 # builds up the frequent itemset tree recursively.
 function growtree!(nd::Node, minsupp, k, maxdepth)
     sibs = younger_siblings(nd)
+
     for j = 1:length(sibs)
         transacts = nd.transactions & sibs[j].transactions
         supp = sum(transacts)
+        
         if supp ≥ minsupp
             items = zeros(Int16, k)
             items[1:k-1] = nd.item_ids[1:k-1]
@@ -107,10 +133,10 @@ growtree!(n2, 1, 3, 3)
 
 
 
-function get_unique_items{M}(T::Array{Array{M, 1}, 1})
+function get_unique_items{M}(all_transacts::Array{Array{M, 1}, 1})
     dict = Dict{M, Bool}()
 
-    for t in T
+    for t in all_transacts
         for i in t
             dict[i] = true
         end
@@ -133,14 +159,14 @@ t = [["a", "b"],
 
 # This function is used internally by the frequent() function to create the 
 # initial bitarrays used to represent the first "children" in the itemset tree.
-function occurrence(T::Array{Array{String, 1}, 1}, uniq_items::Array{String, 1})
-    n = length(T)
+function occurrence(all_transacts::Array{Array{String, 1}, 1}, uniq_items::Array{String, 1})
+    n = length(all_transacts)
     p = length(uniq_items)
 
     itm_pos = Dict(zip(uniq_items, 1:p))
     res = falses(n, p)
     for i = 1:n 
-        for itm in T[i]
+        for itm in all_transacts[i]
             j = itm_pos[itm]
             res[i, j] = true
         end
@@ -154,18 +180,18 @@ unq = get_unique_items(t)
 
 
 """
-    frequent(T, minsupp, maxdepth)
+    frequent(all_transacts, minsupp, maxdepth)
 
 This function creates a frequent itemset tree from an array of transactions. 
 The tree is built recursively using calls to the growtree!() function. The 
 `minsupp` and `maxdepth` parameters control the minimum support needed for an 
 itemset to be called "frequent", and the max depth of the tree, respectively 
 """
-function frequent(T::Array{Array{String,1},1}, minsupp, maxdepth)
-    uniq_items = get_unique_items(T)
+function frequent(all_transacts::Array{Array{String, 1}, 1}, minsupp, maxdepth)
+    uniq_items = get_unique_items(all_transacts)
     sort!(uniq_items)
 
-    occ = occurrence(T, uniq_items)
+    occ = occurrence(all_transacts, uniq_items)
     root = Node(Int16(1), Int16[-1], BitArray(0))
     n_items = length(uniq_items)
 
@@ -196,8 +222,8 @@ t = [["a", "b"],
      ["a", "b", "c"],
      ["c", "b", "e", "f"]]
 
-@code_warntype frequent(t, 1, 3)
-xtree1 = frequent(t, 1, 4)
+@code_warntype frequent(t, 0.01, 3)
+xtree1 = frequent(t, 0.01, 4)
 
 
 function prettyprint(node::Node, k::Int = 0)
@@ -231,17 +257,17 @@ end
 
 
 
-itemlist = randstring(50);
+itemlist = randstring(100);
 
 
-n = 1_000
-m = 20              # number of items in transactions
+n = 10_000
+m = 25              # number of items in transactions
 t = [sample(itemlist, m, replace = false) for _ in 1:n];
 
 # @code_warntype frequent(t, 1)
 @time unq2 = get_unique_items(t);
 @time occ2 = occurrence(t, unq2);
-@time f = frequent(t, round(Int, n*0.01), m);
+@time f = frequent(t, round(Int, 0.01*n), m);
 
 
 
@@ -265,7 +291,39 @@ function gen_support_dict(root::Node)
 end
 
 
+t1 = [["a", "b"], 
+     ["b", "c", "d"], 
+     ["a", "c"],
+     ["e", "b"], 
+     ["a", "c", "d"], 
+     ["a", "e"], 
+     ["a", "b", "c"],
+     ["c", "b", "e", "f"]]
 
+@code_warntype frequent(t1, 1, 3)
+xtree1 = frequent(t1, 1, 4);
+@code_warntype gen_support_dict(xtree1)
+xsup = gen_support_dict(xtree1)
+
+
+function gen_rules(node::Node, supp_dict::Dict{Array{Int16,1}, Int}, k, num_transacts)
+    mask = trues(k)
+    rules = Array{Rule, 1}(k)
+    for i = 1:k 
+        mask[i] = false 
+        if i > 1 
+            mask[i-1] = true 
+        end
+        rules[i] = Rule(node, mask, supp_dict, num_transacts)
+    end
+    return rules 
+end
+
+@code_warntype gen_rules(xtree1.children[1].children[1].children[1], xsup, 3, 8)
+
+# function compute_metrics(root::Node)
+#     # supp_dict = gen_support_dict(root)
+# end
 
 # function get_cousins(node::Node)
 #     cousins = Array{Node,1}(0)
@@ -302,8 +360,4 @@ end
 # end
 
 # prettyprint2(xtree1, 0)
-
-
-
-
 
