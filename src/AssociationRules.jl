@@ -11,13 +11,15 @@ import Base.isempty
 import Base.find
 
 
-export Rule, Sequence, IDList, PrefixNode, SeqRule, apriori, frequent, make_transactions, spade, make_sequences, sequential_rules, dataset
+# export Rule, Sequence, IDList, PrefixNode, SeqRule, apriori, frequent, make_transactions, spade, make_sequences, sequential_rules, dataset
 
-include("apriori.jl")
+# include("apriori.jl")
+include("apriori_views.jl")     # NOTE: This is broken, but maybe a good idea
+
 include("apriori_utils.jl")
 include("parallel_tools.jl")
 include("spade.jl")
 include("spade_utils.jl")
 include("sequential_rules.jl")
 
-end # module
+# end # module
