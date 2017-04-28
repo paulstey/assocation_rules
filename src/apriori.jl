@@ -96,7 +96,7 @@ function apriori_gen{M}(x::Array{Array{M, 1}, 1})
     m = length(x[1]) - 1
     C = Array{Array{M, 1}, 1}(0)
 
-    for i = 1:n
+    for i = 1:(n-1)
         sort!(x[i])
 
         for j = (i+1):n
@@ -124,7 +124,7 @@ end
 
 # v = [sample(1:10, 5, replace = false) for x = 1:100];
 # @code_warntype apriori_gen(v)
-# @time apriori_gen(v);
+# @time apriori_gen(v)
 
 
 
@@ -149,7 +149,6 @@ frequent item sets.
 * `minsup`: minimum support needed to be considered frequent
 """
 function frequent{M}(T::Array{Array{M, 1}, 1}, minsup::Float64)
-
     I = get_unique_items(T)
 
     # Find freq-itemset when k = 1: F_k = {i : i ∈ I ∧ σ({i}) ≥ N × minsup}
@@ -174,8 +173,9 @@ end
 
 # v = [[1, 2, 3], [1, 2, 3], [1, 2, 3], [2, 3, 5], [1, 3, 4], [1, 2, 5], [2, 3, 4], [1, 4, 5], [3, 4, 5]]
 # v = [[1, 2], [1, 3], [2, 4], [1, 2, 3], [1, 2, 4], [1, 3, 4], [1, 2, 3, 4], [1, 2, 3, 5], [2, 3, 4, 6]]
-# v = [rand([1, 2, 3, 4, 5], 10) for x = 1:1000];
-# @code_warntype frequent(v, 0.5)
+v = [sample(1:8, 7, replace = false) for x = 1:100];
+@code_warntype frequent(v, 0.5)
+@time frequent(v, 0.1)
 
 
 
@@ -207,7 +207,7 @@ function ap_genrules!(fk, Hm, T, minsupp, minconf, R)
     if isempty(Hm)
         return nothing
     end
-    m = length(Hm[1])
+    m = length(view(Hm, 1))
 
     if k > m+1
         H_mplus1 = apriori_gen(Hm)
@@ -262,12 +262,12 @@ end
 function gen_onerules!(fk, H1, R, T, minsupp, minconf)
     m = length(H1)
     for j = 1:m
-        xconf = conf(fk, H1[j], T)
+        xconf = conf(fk, view(H1, j), T)
         if !(H1[j][1] in fk) && xconf ≥ minconf
-            xsupp = supp(fk, H1[j], T)
+            xsupp = supp(fk, view(H1, j), T)
             if xsupp ≥ minsupp
-                xlift = lift(xconf, H1[j], T)
-                push!(R, Rule(fk, H1[j], xsupp, xconf, xlift))
+                xlift = lift(xconf, view(H1, j), T)
+                push!(R, Rule(fk, view(H1, j), xsupp, xconf, xlift))
             end
         end
     end
@@ -287,9 +287,9 @@ function gen_rules{M}(F::Array{Array{Array{M, 1}, 1}, 1}, T, minsupp, minconf, m
     R = Array{Rule, 1}(0)
 
     for k = 1:k_max
-        H1 = map(x -> [x], get_unique_items(F[k]))
+        H1 = map(x -> [x], get_unique_items(view(F, k)))
 
-        for f in F[k]
+        for f in view(F, k)
             gen_onerules!(f, H1, R, T, minsupp, minconf)
             if multi_consquents
                 ap_genrules!(f, H1, T, minsupp, minconf, R)
