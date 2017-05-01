@@ -31,7 +31,6 @@ type Node
 end
 
 
-
 type Rule 
     p::Array{Int16,1}
     q::Int16
@@ -320,6 +319,9 @@ function gen_rules(node::Node, supp_dict::Dict{Array{Int16,1}, Int}, k, num_tran
 end
 
 @code_warntype gen_rules(xtree1.children[1].children[1].children[1], xsup, 3, 8)
+
+
+
 
 # function compute_metrics(root::Node)
 #     # supp_dict = gen_support_dict(root)
