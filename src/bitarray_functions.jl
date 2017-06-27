@@ -29,7 +29,6 @@ function ==(x::Array{Node,1}, y::Array{Node,1})
 end
 
 
-
 """
     isless(x::Array{Int,1}, y::Array{Int,1})
 This `isless()` method is defined to handle two Array{Int,1} so that we can 
